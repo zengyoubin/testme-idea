@@ -26,6 +26,7 @@ public class TemplateRegistry {
     public static final String SPOCK_MOCKITO_GROOVY_TEMPLATE = "Groovy, Spock & Mockito.groovy";
     public static final String SPOCK_PARAMETERIZED_MOCKITO_GROOVY_TEMPLATE = "Parameterized Groovy, Spock & Mockito.groovy";
     public static final String SPECS2_MOCKITO_SCALA_TEMPLATE = "Specs2 & Mockito.scala";
+    public static final String SPOCK_POWERMOCK_GROOVY_TEMPLATE = "Spock & PowerMock.groovy";
 
     static {
 /*
@@ -57,6 +58,13 @@ public class TemplateRegistry {
         templateDescriptors.add(new TemplateDescriptor("<html><i>Specs2 </i>"+ TemplateIcons.Scala.asHtml()+" & <i>Mockito</i>" + TemplateIcons.Mockito.asHtml()+ "(Experimental)</html>",
                 "<html><i>Specs2 </i></html><Scala><html> & <i>Mockito</i></html><Mockito>(Experimental)",
                 SPECS2_MOCKITO_SCALA_TEMPLATE, Language.Scala, TemplateRole.Tester));
+    }
+
+    static {
+        templateDescriptors.clear();
+        templateDescriptors.add(new TemplateDescriptor("<html><i>Spock</i>" + TemplateIcons.Groovy.asHtml() + " & <i>PowerMock</i></html>",
+                "<html><i>Spock</i></html><Groovy><html> & <i>PowerMock</i></html>",
+                SPOCK_POWERMOCK_GROOVY_TEMPLATE, Language.Groovy, TemplateRole.Tester));
     }
     public List<TemplateDescriptor> getTemplateDescriptors(){
         return templateDescriptors;

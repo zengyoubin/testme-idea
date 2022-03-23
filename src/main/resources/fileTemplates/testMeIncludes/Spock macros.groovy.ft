@@ -1,0 +1,103 @@
+#parse("TestMe common macros.java")
+################## Global vars ###############
+#set($grReplacementTypesStatic = {
+    "java.util.Collection": "[<VAL>]",
+    "java.util.Deque": "new LinkedList([<VAL>])",
+    "java.util.List": "[<VAL>]",
+    "java.util.Map": "[<VAL>:<VAL>]",
+    "java.util.NavigableMap": "new java.util.TreeMap([<VAL>:<VAL>])",
+    "java.util.NavigableSet": "new java.util.TreeSet([<VAL>])",
+    "java.util.Queue": "new java.util.LinkedList<TYPES>([<VAL>])",
+    "java.util.RandomAccess": "new java.util.Vector([<VAL>])",
+    "java.util.Set": "[<VAL>] as java.util.Set<TYPES>",
+    "java.util.SortedSet": "[<VAL>] as java.util.SortedSet<TYPES>",
+    "java.util.LinkedList": "new java.util.LinkedList<TYPES>([<VAL>])",
+    "java.util.ArrayList": "[<VAL>]",
+    "java.util.HashMap": "[<VAL>:<VAL>]",
+    "java.util.TreeMap": "new java.util.TreeMap<TYPES>([<VAL>:<VAL>])",
+    "java.util.LinkedList": "new java.util.LinkedList<TYPES>([<VAL>])",
+    "java.util.Vector": "new java.util.Vector([<VAL>])",
+    "java.util.HashSet": "[<VAL>] as java.util.HashSet",
+    "java.util.Stack": "new java.util.Stack<TYPES>(){{push(<VAL>)}}",
+    "java.util.LinkedHashMap": "[<VAL>:<VAL>]",
+    "java.util.TreeSet": "[<VAL>] as java.util.TreeSet"
+})
+#set($grReplacementTypes = $grReplacementTypesStatic.clone())
+#set($grReplacementTypesForReturn = $grReplacementTypesStatic.clone())
+#foreach($javaFutureType in $TestSubjectUtils.javaFutureTypes)
+#evaluate(${grReplacementTypes.put($javaFutureType,"java.util.concurrent.CompletableFuture.completedFuture(<VAL>)")})
+#end
+#foreach($javaFutureType in $TestSubjectUtils.javaFutureTypes)
+#evaluate(${grReplacementTypesForReturn.put($javaFutureType,"<VAL>")})
+#end
+#set($grDefaultTypeValues = {
+    "byte": "(byte)0",
+    "short": "(short)0",
+    "int": "0",
+    "long": "0l",
+    "float": "0f",
+    "double": "0d",
+    "char": "(char)'a'",
+    "boolean": "true",
+    "java.lang.Byte": """00110"" as Byte",
+    "java.lang.Short": "(short)0",
+    "java.lang.Integer": "0",
+    "java.lang.Long": "1l",
+    "java.lang.Float": "1.1f",
+    "java.lang.Double": "0d",
+    "java.lang.Character": "'a' as Character",
+    "java.lang.Boolean": "Boolean.TRUE",
+    "java.math.BigDecimal": "0 as java.math.BigDecimal",
+    "java.math.BigInteger": "0g",
+    "java.util.Date": "new java.util.GregorianCalendar($YEAR, java.util.Calendar.$MONTH_NAME_EN.toUpperCase(), $DAY_NUMERIC, $HOUR_NUMERIC, $MINUTE_NUMERIC).getTime()",
+    "java.time.LocalDate": "java.time.LocalDate.of($YEAR, java.time.Month.$MONTH_NAME_EN.toUpperCase(), $DAY_NUMERIC)",
+    "java.time.LocalDateTime": "java.time.LocalDateTime.of($YEAR, java.time.Month.$MONTH_NAME_EN.toUpperCase(), $DAY_NUMERIC, $HOUR_NUMERIC, $MINUTE_NUMERIC, $SECOND_NUMERIC)",
+    "java.time.LocalTime": "java.time.LocalTime.of($HOUR_NUMERIC, $MINUTE_NUMERIC, $SECOND_NUMERIC)",
+    "java.time.Instant": "java.time.LocalDateTime.of($YEAR, java.time.Month.$MONTH_NAME_EN.toUpperCase(), $DAY_NUMERIC, $HOUR_NUMERIC, $MINUTE_NUMERIC, $SECOND_NUMERIC).toInstant(java.time.ZoneOffset.UTC)",
+    "java.io.File": "new File(getClass().getResource(""/$PACKAGE_NAME.replace('.','/')/PleaseReplaceMeWithTestFile.txt"").getFile())",
+    "java.lang.Class": "Class.forName(""$TESTED_CLASS.canonicalName"")"
+})
+##
+##
+################## Macros #####################
+#macro(grRenderTestSubjectInit $testedClass $hasTestableInstanceMethod $hasMocks)
+#if($hasMocks)
+    def $StringUtils.deCapitalizeFirstLetter($testedClass.name)
+#elseif($hasTestableInstanceMethod)
+    $testedClass.canonicalName $StringUtils.deCapitalizeFirstLetter($testedClass.name)= $TestBuilder.renderInitType($testedClass,"$testedClass.name",$grReplacementTypes,$grDefaultTypeValues)
+#end
+#end
+##
+#macro(grRenderMockedFields $testedClassFields)
+#foreach($field in $testedClassFields)
+#if($MockitoMockBuilder.isMockable($field))
+     def $field.name = Mock($field.type.canonicalName)
+#elseif($MockitoMockBuilder.isMockExpected($field))
+    $MockitoMockBuilder.getImmockabiliyReason("//",$field)
+#end
+#end
+#end
+##
+#macro(grRenderAssert $method)
+result#if($TestSubjectUtils.isJavaFuture($method.returnType)).get()#end == $TestBuilder.renderReturnParam($method,$method.returnType,"replaceMeWithExpectedResult",$grReplacementTypesForReturn,$grDefaultTypeValues)
+#end
+##
+#macro(grRenderMethodCall $method,$testedClassName)
+#renderJavaReturnVar($method.returnType)#if($method.static)$testedClassName#{else}$StringUtils.deCapitalizeFirstLetter($testedClassName)#end.${method.name}($TestBuilder.renderMethodParams($method,$grReplacementTypes,$grDefaultTypeValues))
+#end
+##
+#macro(grRenderParameterizedMethodCall $method,$testedClassName $methodClassParamsStr)
+#if($method.static)$testedClassName#{else}testObj#end.${method.name}($methodClassParamsStr)##
+#end
+##
+#macro(grRenderMockStubs $method $testedClassFields)
+#foreach($field in $testedClassFields)
+#if($MockitoMockBuilder.isMockable($field))
+#foreach($fieldMethod in $field.type.methods)
+#if($fieldMethod.returnType && $fieldMethod.returnType.name !="void" && $TestSubjectUtils.isMethodCalled($fieldMethod,$method))
+    $field.name.${fieldMethod.name}($MockitoMockBuilder.buildMockArgsMatchers(${fieldMethod.methodParams},"Groovy")) >> $TestBuilder.renderReturnParam($method,$fieldMethod.returnType,"${fieldMethod.name}Response",$grReplacementTypes,$grDefaultTypeValues)
+#end
+#end
+#end
+#end
+#end

@@ -78,7 +78,8 @@ public class  MockitoMockBuilder {
      */
     @SuppressWarnings("unused")
     public boolean isMockable(Field field) {
-        final boolean isMockable = !field.getType().isPrimitive() && !isWrapperType(field.getType()) && (!field.getType().isFinal() || isMockitoMockMakerInlineOn) && !field.isOverridden() && !field.getType().isArray() && !field.getType().isEnum();
+        boolean isMockable = !field.getType().isPrimitive() && !isWrapperType(field.getType()) && (!field.getType().isFinal() || isMockitoMockMakerInlineOn) && !field.isOverridden() && !field.getType().isArray() && !field.getType().isEnum();
+        isMockable = isMockable && !field.getType().getCanonicalName().equals("org.slf4j.Logger");
         LOG.debug("field "+field.getType().getCanonicalName()+" "+field.getName()+" is mockable:"+isMockable);
         return isMockable;
     }
@@ -171,6 +172,9 @@ public class  MockitoMockBuilder {
      */
     @NotNull
     private String deductMatcherTypeMethod(Param param, Language language) {
+        if(language == Language.Groovy){
+            return "_";
+        }
         String matcherType;
         if (param.getType().isVarargs()) {
             matcherType = "anyVararg";

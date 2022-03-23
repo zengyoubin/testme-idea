@@ -201,6 +201,9 @@ public class Method {
                     isRelevant = false;
                 }
             }
+            if (methodId.startsWith("com.ctrip")) {
+                isRelevant = true;
+            }
         }
         return isRelevant;
     }

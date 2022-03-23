@@ -1,0 +1,60 @@
+#parse("Spock macros.groovy")
+#set($hasMocks=$MockitoMockBuilder.hasMockable($TESTED_CLASS.fields))
+import spock.lang.*
+#if($hasMocks)
+import static org.mockito.ArgumentMatchers.*
+import static org.powermock.api.mockito.PowerMockito.*
+#end
+
+
+#parse("File Header.java")
+class ${CLASS_NAME}  extends Specification {
+def testObj = new $TESTED_CLASS.canonicalName ( )
+#grRenderMockedFields($TESTED_CLASS.fields)
+#if($hasMocks)
+def setup ( ) {
+
+    #foreach($field in $TESTED_CLASS.fields)
+        #if($MockitoMockBuilder.isMockable($field))
+        testObj.$field.name = $field.name
+        #end
+    #end
+}
+#end
+#foreach($method in $TESTED_CLASS.methods)
+    #if($TestSubjectUtils.shouldBeTested($method))
+        #set($paraTestComponents=$TestBuilder.buildPrameterizedTestComponents($method,$grReplacementTypesForReturn,$grReplacementTypes,$grDefaultTypeValues))
+
+    @Unroll
+    def "#renderTestMethodNameAsWords($method.name)$TestSubjectUtils.formatSpockParamNamesTitle($paraTestComponents.paramsMap, $method.hasReturn())"() {
+        #if($MockitoMockBuilder.shouldStub($method,$TESTED_CLASS.fields))
+        given: "设定相关方法入参"
+
+        and: "Mock相关接口返回"
+            #foreach($field in $TESTED_CLASS.fields)
+                #if($MockitoMockBuilder.isMockable($field))
+                    #foreach($fieldMethod in $field.type.methods)
+                        #if($method.returnType && $fieldMethod.returnType.name !=
+                            "void" && $TestSubjectUtils.isMethodCalled($fieldMethod,$method))
+                            $field.name.${fieldMethod.name}($MockitoMockBuilder.buildMockArgsMatchers(${fieldMethod.methodParams},
+                            "Groovy")) >> $TestBuilder.renderReturnParam($method,$fieldMethod.returnType,
+                            "${fieldMethod.name}Response",$grReplacementTypes,$grDefaultTypeValues)
+                        #end
+                    #end
+                #end
+            #end
+
+        #end
+    when:
+    def result =  #grRenderParameterizedMethodCall($method, $TESTED_CLASS.name, $paraTestComponents.methodClassParamsStr)
+
+    then: "验证返回结果里属性值是否符合预期"
+
+    result == expectedResult
+    where: "表格方式验证多种分支调用场景"
+        $TestSubjectUtils.formatSpockDataParameters($paraTestComponents.paramsMap, "        ")
+    }
+    #end
+#end
+}
+
