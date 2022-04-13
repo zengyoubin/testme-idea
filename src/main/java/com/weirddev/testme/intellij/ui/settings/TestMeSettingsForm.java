@@ -17,6 +17,7 @@ public class TestMeSettingsForm implements Disposable {
     private JCheckBox reformatCodeCheckBox;
     private JCheckBox replaceFullyQualifiedNamesCheckBox;
     private JPanel rootPanel;
+    private JTextField generatePojoPrefix;
 
     public JPanel getRootPanel() {
         return rootPanel;
@@ -33,6 +34,7 @@ public class TestMeSettingsForm implements Disposable {
             testMeConfig.setOptimizeImports(optimizeImportsCheckBox.isSelected());
             testMeConfig.setReformatCode(reformatCodeCheckBox.isSelected());
             testMeConfig.setReplaceFullyQualifiedNames(replaceFullyQualifiedNamesCheckBox.isSelected());
+            testMeConfig.setGeneratePojoPrefix(generatePojoPrefix.getText());
         }
     }
 
@@ -42,6 +44,7 @@ public class TestMeSettingsForm implements Disposable {
             optimizeImportsCheckBox.setSelected(state.getOptimizeImports());
             reformatCodeCheckBox.setSelected(state.getReformatCode());
             replaceFullyQualifiedNamesCheckBox.setSelected(state.getReplaceFullyQualifiedNames());
+            generatePojoPrefix.setText(state.getGeneratePojoPrefix());
         }
     }
 
@@ -50,7 +53,8 @@ public class TestMeSettingsForm implements Disposable {
                 (generateTestsForInheritedCheckBox.isSelected() != state.getGenerateTestsForInheritedMethods() ||
                         optimizeImportsCheckBox.isSelected() != state.getOptimizeImports() ||
                         reformatCodeCheckBox.isSelected() != state.getReformatCode() ||
-                        replaceFullyQualifiedNamesCheckBox.isSelected() != state.getReplaceFullyQualifiedNames()
+                        replaceFullyQualifiedNamesCheckBox.isSelected() != state.getReplaceFullyQualifiedNames() ||
+                        !generatePojoPrefix.getText().equals(state.getGeneratePojoPrefix())
                 );
     }
 }

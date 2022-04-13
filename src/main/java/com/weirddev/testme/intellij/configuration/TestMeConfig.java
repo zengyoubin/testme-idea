@@ -31,6 +31,8 @@ public class TestMeConfig {
      */
     private boolean optimizeImports= true;
 
+    private String generatePojoPrefix = "";
+
     public boolean getGenerateTestsForInheritedMethods() {
         return generateTestsForInheritedMethods;
     }
@@ -61,5 +63,13 @@ public class TestMeConfig {
 
     public void setOptimizeImports(boolean optimizeImports) {
         this.optimizeImports = optimizeImports;
+    }
+
+    public String getGeneratePojoPrefix() {
+        return generatePojoPrefix;
+    }
+
+    public void setGeneratePojoPrefix(String generatePojoPrefix) {
+        this.generatePojoPrefix = generatePojoPrefix;
     }
 }

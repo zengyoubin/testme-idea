@@ -12,6 +12,8 @@ import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.util.PsiUtil;
 import com.weirddev.testme.intellij.common.utils.LanguageUtils;
 import com.weirddev.testme.intellij.common.utils.PsiMethodUtils;
+import com.weirddev.testme.intellij.configuration.TestMeConfig;
+import com.weirddev.testme.intellij.configuration.TestMeConfigPersistent;
 import com.weirddev.testme.intellij.groovy.resolvers.GroovyPsiTreeUtils;
 import com.weirddev.testme.intellij.resolvers.to.MethodCallArg;
 import com.weirddev.testme.intellij.resolvers.to.ResolvedMethodCall;
@@ -22,6 +24,7 @@ import com.weirddev.testme.intellij.utils.ClassNameUtils;
 import com.weirddev.testme.intellij.utils.JavaPsiTreeUtils;
 import com.weirddev.testme.intellij.utils.PropertyUtils;
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -31,6 +34,7 @@ import java.util.stream.Stream;
 /**
  * A class Method.
  * Date: 24/10/2016
+ *
  * @author Yaron Yamin
  */
 public class Method {
@@ -38,99 +42,123 @@ public class Method {
     /**
      * Method's return type
      */
-    @Getter private final Type returnType;
+    @Getter
+    private final Type returnType;
     /**
      * method name
      */
-    @Getter private final String name;
+    @Getter
+    private final String name;
     /**
      * method owner type cannonical name
      */
-    @Getter private final String ownerClassCanonicalType;
+    @Getter
+    private final String ownerClassCanonicalType;
     /**
      * method arguments
      */
-    @Getter private final List<Param> methodParams;
+    @Getter
+    private final List<Param> methodParams;
     /**
      * true - if method has private modifier
      */
-    @Getter private final boolean isPrivate;
+    @Getter
+    private final boolean isPrivate;
     /**
      * true - if method has protected modifier
      */
-    @Getter private final boolean isProtected;
+    @Getter
+    private final boolean isProtected;
     /**
      * true - if method has default (package-private access modifier)
      */
-    @Getter private final boolean isDefault;
+    @Getter
+    private final boolean isDefault;
     /**
      * true - if method has public modifier
      */
-    @Getter private final boolean isPublic;
+    @Getter
+    private final boolean isPublic;
     /**
      * true - if method is abstract
      */
-    @Getter private final boolean isAbstract;
+    @Getter
+    private final boolean isAbstract;
     /**
      * true - if method defined as native
      */
-    @Getter private final boolean isNative;
+    @Getter
+    private final boolean isNative;
     /**
      * true - if this is a static method
      */
-    @Getter private final boolean isStatic;
+    @Getter
+    private final boolean isStatic;
     /**
      * true - if method is a setter
      */
-    @Getter private final boolean isSetter;
+    @Getter
+    private final boolean isSetter;
     /**
      * true - if method is a getter
      */
-    @Getter private final boolean isGetter;
+    @Getter
+    private final boolean isGetter;
     /**
      * true - if method is a constructor
      */
-    @Getter private final boolean constructor;
+    @Getter
+    private final boolean constructor;
     /**
      * true - if method is overridden in child class
      */
-    @Getter private final boolean overridden;
+    @Getter
+    private final boolean overridden;
     /**
      * true - if method is inherited from parent class
      */
-    @Getter private final boolean inherited;
+    @Getter
+    private final boolean inherited;
     /**
      * true - if owner type is an interface
      */
-    @Getter private final boolean isInInterface;
+    @Getter
+    private final boolean isInInterface;
     /**
      * true -  if method is synthetically generated. common for scala methods
      */
-    @Getter private final boolean isSynthetic;
+    @Getter
+    private final boolean isSynthetic;
     /**
      * the underlying field property name. relevant for getter/setter
      */
-    @Getter private final String propertyName;
+    @Getter
+    private final String propertyName;
     /**
-     *true - when accessible from class under test
+     * true - when accessible from class under test
      */
-    @Getter private final boolean accessible;
+    @Getter
+    private final boolean accessible;
     /**
      * true - is Primary Constructor (relevant for Scala)
      */
-    @Getter private final boolean primaryConstructor;
+    @Getter
+    private final boolean primaryConstructor;
     /**
      * methods called directly from this method
      */
-    @Getter private Set<MethodCall> directMethodCalls = new HashSet<MethodCall>();
+    @Getter
+    private Set<MethodCall> directMethodCalls = new HashSet<MethodCall>();
     /**
      * methods called directly from this method or on the call stack from this method via other methods belonging to the same type hierarchy
      */
-    @Getter private Set<MethodCall> methodCalls = new HashSet<MethodCall>();
+    @Getter
+    private Set<MethodCall> methodCalls = new HashSet<MethodCall>();
     /**
      * methods referenced from this method. i.e.  SomeClassName::someMethodName
      */
-    @Getter private Set<Method> methodReferences = new HashSet<Method>();
+    @Getter
+    private Set<Method> methodReferences = new HashSet<Method>();
     /**
      *  method calls of methods in this owner's class type or one of it's ancestor type. including indirectly called methods up to max method call search depth. ResolvedMethodCall objects of the class under test are deeply resolved
      *  @deprecated not used. might be removed
@@ -139,17 +167,20 @@ public class Method {
     /**
      * references included in this method's implementation
      */
-    @Getter private Set<Reference> internalReferences = new HashSet<Reference>();
+    @Getter
+    private Set<Reference> internalReferences = new HashSet<Reference>();
     /**
      * formatted method id. a string used to uniquely discriminate this method from others
      */
-    @Getter private final String methodId;
+    @Getter
+    private final String methodId;
     /**
-     *  Fields affected (assigned to) by methods called from this method. currently calculated only for constructors. i.e. when delegating to other constructors
+     * Fields affected (assigned to) by methods called from this method. currently calculated only for constructors. i.e. when delegating to other constructors
      */
-    @Getter private final Set<Field> indirectlyAffectedFields = new HashSet<Field>();
+    @Getter
+    private final Set<Field> indirectlyAffectedFields = new HashSet<Field>();
 
-    public Method(PsiMethod psiMethod, PsiClass srcClass, int maxRecursionDepth,TypeDictionary typeDictionary) {
+    public Method(PsiMethod psiMethod, PsiClass srcClass, int maxRecursionDepth, TypeDictionary typeDictionary) {
         isPrivate = psiMethod.hasModifierProperty(PsiModifier.PRIVATE);
         isProtected = psiMethod.hasModifierProperty(PsiModifier.PROTECTED);
         isDefault = psiMethod.hasModifierProperty(PsiModifier.DEFAULT) || psiMethod.hasModifierProperty(PsiModifier.PACKAGE_LOCAL);
@@ -165,7 +196,7 @@ public class Method {
         isGetter = PropertyUtils.isPropertyGetter(psiMethod);
 //        final PsiField psiField = PropertyUtil.findPropertyFieldByMember(psiMethod);
 //        propertyName = psiField == null ? null : psiField.getName();
-        propertyName = ClassNameUtils.extractTargetPropertyName(name,isSetter,isGetter);
+        propertyName = ClassNameUtils.extractTargetPropertyName(name, isSetter, isGetter);
         if (srcClass != null) {
             overridden = isOverriddenInChild(psiMethod, srcClass);
             inherited = isInherited(psiMethod, srcClass);
@@ -194,37 +225,43 @@ public class Method {
                     && (psiMethod.getClass().getCanonicalName().contains("GrGdkMethodImpl") || methodId.endsWith(".invokeMethod(java.lang.String,java.lang.Object)") || methodId.endsWith(".getProperty(java.lang.String)") || methodId
                     .endsWith(".setProperty(java.lang.String,java.lang.Object)"))) {
                 isRelevant = false;
-            } else if(ownerClass!=null && ownerClass.getQualifiedName()!=null){
-                JavaPsiFacade facade = JavaPsiFacade.getInstance( ownerClass.getProject());
-                PsiClass[] possibleClasses = facade.findClasses(ownerClass.getQualifiedName(), GlobalSearchScope.projectScope(( ownerClass.getProject())));
+            } else if (ownerClass != null && ownerClass.getQualifiedName() != null) {
+                JavaPsiFacade facade = JavaPsiFacade.getInstance(ownerClass.getProject());
+                PsiClass[] possibleClasses = facade.findClasses(ownerClass.getQualifiedName(), GlobalSearchScope.projectScope((ownerClass.getProject())));
                 if (possibleClasses.length == 0) {
                     isRelevant = false;
                 }
             }
-            if (methodId.startsWith("com.ctrip")) {
-                isRelevant = true;
+
+            if (!isRelevant) {
+                TestMeConfig state = TestMeConfigPersistent.getInstance().getState();
+                String prefix = Optional.ofNullable(state).map(TestMeConfig::getGeneratePojoPrefix).orElse("");
+                for (String start : prefix.split(",")) {
+                    if (StringUtils.isNotBlank(start) && methodId.startsWith(start)) {
+                        return true;
+                    }
+                }
             }
         }
         return isRelevant;
     }
 
     /**
-     *
      * true - if method has a return type
      */
-    public boolean hasReturn(){
+    public boolean hasReturn() {
         return returnType != null && !"void".equals(returnType.getName());
     }
 
-    boolean isTestable(){
-        return !isLanguageInherited(ownerClassCanonicalType) && !isSetter() && !isGetter() && !isConstructor() &&((isDefault()|| isProtected() ) && !isInherited() || isPublic()) && !isOverridden() && !isInInterface() && !isAbstract() && !isSynthetic();
+    boolean isTestable() {
+        return !isLanguageInherited(ownerClassCanonicalType) && !isSetter() && !isGetter() && !isConstructor() && ((isDefault() || isProtected()) && !isInherited() || isPublic()) && !isOverridden() && !isInInterface() && !isAbstract() && !isSynthetic();
     }
 
     void resolveInternalReferences(PsiMethod psiMethod, TypeDictionary typeDictionary) {
         if (!isLanguageInherited(getOwnerClassCanonicalType())) {
             resolveCalledMethods(psiMethod, typeDictionary);
-            resolveReferences(psiMethod,typeDictionary);
-            resolveMethodReferences(psiMethod,typeDictionary);
+            resolveReferences(psiMethod, typeDictionary);
+            resolveMethodReferences(psiMethod, typeDictionary);
         }
     }
 
@@ -243,9 +280,10 @@ public class Method {
             if (LanguageUtils.isScala(psiMethod.getLanguage())) {
                 typeElement = ScalaPsiTreeUtils.resolveReturnType(psiMethod);
             }
-            return typeDictionary.getType(substitutedType.orElse(psiType), maxRecursionDepth, true,typeElement);
+            return typeDictionary.getType(substitutedType.orElse(psiType), maxRecursionDepth, true, typeElement);
         }
     }
+
     private static PsiField resolveLeftHandExpressionAsField(@NotNull PsiExpression expr) {
         PsiElement parent = PsiTreeUtil.skipParentsOfType(expr, PsiParenthesizedExpression.class);
         if (!(parent instanceof PsiAssignmentExpression)) {
@@ -254,8 +292,9 @@ public class Method {
         final PsiAssignmentExpression psiAssignmentExpression = (PsiAssignmentExpression) parent;
         final PsiReference reference = psiAssignmentExpression.getLExpression().getReference();
         final PsiElement element = reference != null ? reference.resolve() : null;
-        return element == null || !(element instanceof PsiField) ? null : (PsiField)element ;
+        return element == null || !(element instanceof PsiField) ? null : (PsiField) element;
     }
+
     private boolean isInterface(PsiMethod psiMethod) {
 //            //method inherited from an interface but implemented on the interface should not be considered as interface method
 //            return psiMethod.hasModifierProperty("abstract") || psiMethod.getContainingClass() != null && psiMethod.getContainingClass().isInterface();
@@ -270,12 +309,12 @@ public class Method {
             return false;
         }
     }
+
     @NotNull
     private List<Pair<PsiMethod, PsiSubstitutor>> findMethodSubstitutionMap(PsiMethod psiMethod, PsiClass srcClass) {
         if (isInherited() && isTestable() && srcClass != null && hasGenericType(psiMethod)) {
             return srcClass.findMethodsAndTheirSubstitutorsByName(psiMethod.getName(), true);
-        }
-        else {
+        } else {
             return new ArrayList<>();
         }
     }
@@ -301,13 +340,13 @@ public class Method {
             for (ResolvedReference resolvedReference : GroovyPsiTreeUtils.findReferences(psiMethod)) {
                 internalReferences.add(new Reference(resolvedReference.getReferenceName(), resolvedReference.getRefType(), resolvedReference.getPsiOwnerType(), typeDictionary));
             }
-        }
-        else {
+        } else {
             for (ResolvedReference resolvedReference : JavaPsiTreeUtils.findReferences(psiMethod)) {
                 internalReferences.add(new Reference(resolvedReference.getReferenceName(), resolvedReference.getRefType(), resolvedReference.getPsiOwnerType(), typeDictionary));
             }
         }
     }
+
     private void resolveMethodReferences(PsiMethod psiMethod, TypeDictionary typeDictionary) {
         for (PsiMethod resolvedMethodReference : JavaPsiTreeUtils.findMethodReferences(psiMethod)) {
             if (isRelevant(resolvedMethodReference.getContainingClass(), resolvedMethodReference)) {
@@ -315,19 +354,18 @@ public class Method {
             }
         }
     }
+
     private void resolveCalledMethods(PsiMethod psiMethod, TypeDictionary typeDictionary) {
         //todo try to pass/support src class in scala/groovy as well. if successful, consider re-implementing with a factory method call
         if (LanguageUtils.isGroovy(psiMethod.getLanguage())) {
             for (ResolvedMethodCall resolvedMethodCall : GroovyPsiTreeUtils.findMethodCalls(psiMethod)) {
                 addDirectMethodCallIfRelevant(typeDictionary, resolvedMethodCall, null);
             }
-        }
-        else if (LanguageUtils.isScala(psiMethod.getLanguage())) {
+        } else if (LanguageUtils.isScala(psiMethod.getLanguage())) {
             for (ResolvedMethodCall resolvedMethodCall : ScalaPsiTreeUtils.findMethodCalls(psiMethod)) {
                 addDirectMethodCallIfRelevant(typeDictionary, resolvedMethodCall, null);
             }
-        }
-        else {
+        } else {
             for (ResolvedMethodCall methodCalled : JavaPsiTreeUtils.findMethodCalls(psiMethod)) {
                 addDirectMethodCallIfRelevant(typeDictionary, methodCalled, methodCalled.getPsiMethod().getContainingClass());
             }
@@ -337,7 +375,7 @@ public class Method {
 
     private void addDirectMethodCallIfRelevant(TypeDictionary typeDictionary, ResolvedMethodCall methodCalled, PsiClass srcClass) {
         if (isRelevant(methodCalled.getPsiMethod().getContainingClass(), methodCalled.getPsiMethod())) {
-            this.directMethodCalls.add(new MethodCall(new Method(methodCalled.getPsiMethod(), srcClass, 1, typeDictionary),convertArgs(methodCalled.getMethodCallArguments())));
+            this.directMethodCalls.add(new MethodCall(new Method(methodCalled.getPsiMethod(), srcClass, 1, typeDictionary), convertArgs(methodCalled.getMethodCallArguments())));
         }
     }
 
@@ -353,11 +391,10 @@ public class Method {
 
     private boolean isOverriddenInChild(PsiMethod method, PsiClass srcClass) {
         String srcQualifiedName = srcClass.getQualifiedName();
-        String methodClsQualifiedName = method.getContainingClass()==null?null:method.getContainingClass().getQualifiedName();
+        String methodClsQualifiedName = method.getContainingClass() == null ? null : method.getContainingClass().getQualifiedName();
         if (srcQualifiedName == null || methodClsQualifiedName == null || srcQualifiedName.equals(methodClsQualifiedName)) {
             return false;
-        }
-        else{
+        } else {
             final PsiMethod childMethod = MethodSignatureUtil.findMethodBySuperMethod(srcClass, method, false);
             return childMethod != null;
         }
@@ -365,8 +402,8 @@ public class Method {
 
     private boolean isInherited(PsiMethod method, PsiClass srcClass) {
         String srcQualifiedName = srcClass.getQualifiedName();
-        String methodClsQualifiedName = method.getContainingClass()==null?null:method.getContainingClass().getQualifiedName();
-        return (srcQualifiedName!=null && methodClsQualifiedName!=null &&  !srcQualifiedName.equals(methodClsQualifiedName));
+        String methodClsQualifiedName = method.getContainingClass() == null ? null : method.getContainingClass().getQualifiedName();
+        return (srcQualifiedName != null && methodClsQualifiedName != null && !srcQualifiedName.equals(methodClsQualifiedName));
     }
 
     private List<Param> extractMethodParams(PsiMethod psiMethod, List<Pair<PsiMethod, PsiSubstitutor>> methodSubstitutionMap, boolean shouldResolveAllMethods, int maxRecursionDepth, TypeDictionary typeDictionary) {
@@ -380,10 +417,11 @@ public class Method {
         for (PsiParameter psiParameter : parameters) {
             final ArrayList<Field> assignedToFields = findMatchingFields(psiParameter, psiMethod);
             final Optional<PsiType> substitutedType = findSubstitutedType(psiMethod, psiParameter.getType(), methodSubstitutionMap);
-            params.add(new Param(psiParameter,substitutedType,typeDictionary,maxRecursionDepth,assignedToFields,shouldResolveAllMethods));
+            params.add(new Param(psiParameter, substitutedType, typeDictionary, maxRecursionDepth, assignedToFields, shouldResolveAllMethods));
         }
         return params;
     }
+
     private static ArrayList<Field> findMatchingFields(PsiParameter psiParameter, PsiMethod psiMethod) {
         final ArrayList<Field> fields = new ArrayList<Field>();
         try {
@@ -393,17 +431,16 @@ public class Method {
                     PsiField psiField = null;
                     if (LanguageUtils.isGroovy(element.getLanguage())) {
                         psiField = GroovyPsiTreeUtils.resolveGrLeftHandExpressionAsField(element);
-                    }
-                    else if (element instanceof PsiExpression && !PsiUtil.isOnAssignmentLeftHand((PsiExpression) element)) {
+                    } else if (element instanceof PsiExpression && !PsiUtil.isOnAssignmentLeftHand((PsiExpression) element)) {
                         psiField = resolveLeftHandExpressionAsField((PsiExpression) element);
                     }
                     if (psiField != null && psiField.getContainingClass() != null) {
-                        fields.add(new Field(psiField, psiField.getContainingClass(),null, 0));
+                        fields.add(new Field(psiField, psiField.getContainingClass(), null, 0));
                     }
                 }
             }
         } catch (Throwable e) {
-            LOG.warn(String.format("cant search for matching fields for parameter %s in method %s", psiParameter.getName(), psiMethod.getName()),e);
+            LOG.warn(String.format("cant search for matching fields for parameter %s in method %s", psiParameter.getName(), psiMethod.getName()), e);
         }
         return fields;
     }

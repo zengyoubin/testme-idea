@@ -1,9 +1,6 @@
 package com.weirddev.testme.intellij.template.context;
 
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiField;
-import com.intellij.psi.PsiModifier;
-import com.intellij.psi.PsiType;
+import com.intellij.psi.*;
 import com.weirddev.testme.intellij.template.TypeDictionary;
 import com.weirddev.testme.intellij.utils.ClassNameUtils;
 import lombok.Getter;
@@ -11,40 +8,55 @@ import lombok.Getter;
 /**
  * Class field.
  * Date: 24/10/2016
+ *
  * @author Yaron Yamin
  */
 public class Field {
     /**
      * type of field
      */
-    @Getter private final Type type;
+    @Getter
+    private final Type type;
     /**
      * true - if field is inherited and overridden in this type
      */
-    @Getter private final boolean overridden;
+    @Getter
+    private final boolean overridden;
     /**
      * field has final modifier
      */
-    @Getter private final boolean isFinal;
+    @Getter
+    private final boolean isFinal;
+
+    /**
+     * true - if field is inherited from parent class
+     */
+    @Getter
+    private final boolean inherited;
+
     /**
      * field is static
      */
-    @Getter private final boolean isStatic;
+    @Getter
+    private final boolean isStatic;
     /**
      * canonical name of type owning this field
      */
-    @Getter private final String ownerClassCanonicalName;
+    @Getter
+    private final String ownerClassCanonicalName;
     /**
      * name given to field
      */
-    @Getter private String name;
+    @Getter
+    private String name;
 
     public Field(PsiField psiField, PsiClass srcClass, TypeDictionary typeDictionary, int maxRecursionDepth) {
         this.name = psiField.getName();
-        type= buildType(psiField.getType(), typeDictionary, maxRecursionDepth);
+        type = buildType(psiField.getType(), typeDictionary, maxRecursionDepth);
         String canonicalText = srcClass.getQualifiedName();
         ownerClassCanonicalName = ClassNameUtils.stripArrayVarargsDesignator(canonicalText);
         overridden = isOverriddenInChild(psiField, srcClass);
+        inherited = isInherited(psiField, srcClass);
         isFinal = psiField.getModifierList() != null && psiField.getModifierList().hasExplicitModifier(PsiModifier.FINAL);
         isStatic = psiField.getModifierList() != null && psiField.getModifierList().hasExplicitModifier(PsiModifier.STATIC);
     }
@@ -57,10 +69,16 @@ public class Field {
         }
     }
 
+    private boolean isInherited(PsiField psiField, PsiClass srcClass) {
+        String srcQualifiedName = srcClass.getQualifiedName();
+        String fieldClsQualifiedName = psiField.getContainingClass() == null ? null : psiField.getContainingClass().getQualifiedName();
+        return (srcQualifiedName != null && fieldClsQualifiedName != null && !srcQualifiedName.equals(fieldClsQualifiedName));
+    }
+
     private boolean isOverriddenInChild(PsiField psiField, PsiClass srcClass) {
         String srcQualifiedName = srcClass.getQualifiedName();
-        String fieldClsQualifiedName = psiField.getContainingClass()==null?null:psiField.getContainingClass().getQualifiedName();
-        return (srcQualifiedName!=null && fieldClsQualifiedName!=null &&  !srcQualifiedName.equals(fieldClsQualifiedName)) && srcClass.findFieldByName(psiField.getName(), false)!=null;
+        String fieldClsQualifiedName = psiField.getContainingClass() == null ? null : psiField.getContainingClass().getQualifiedName();
+        return (srcQualifiedName != null && fieldClsQualifiedName != null && !srcQualifiedName.equals(fieldClsQualifiedName)) && srcClass.findFieldByName(psiField.getName(), false) != null;
     }
 
     @Override
