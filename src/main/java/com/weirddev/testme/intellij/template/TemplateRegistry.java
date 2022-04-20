@@ -37,34 +37,37 @@ public class TemplateRegistry {
         templateDescriptors.add(new TemplateDescriptor("<html>with <i><b>JUnit4</b></i><img src='"+ juDark +"'> & <i><b>Mockito</b></i><img src='"+ mockito +"'></html>", "JUnit4 & Mockito.java"));
         templateDescriptors.add(new TemplateDescriptor("<html>with <i><b>JUnit5</b></i><img src='"+ ju5 +"'> & <i><b>Mockito</b></i><img src='"+ mockito +"'></html>", "JUnit4 & Mockito.java"));
 */
-        templateDescriptors.add(new TemplateDescriptor("<html><i>JUnit4</i>"+ TemplateIcons.JUnit4.asHtml()+"& <i>Mockito</i>" + TemplateIcons.Mockito.asHtml()+ "</html>",
-                "<html><i>JUnit4</i></html><JUnit4><html>& <i>Mockito</i></html><Mockito>",
-                JUNIT4_MOCKITO_JAVA_TEMPLATE, Language.Java, TemplateRole.Tester));
-        templateDescriptors.add(new TemplateDescriptor("<html><i>JUnit5</i>"+ TemplateIcons.JUnit5.asHtml()+"& <i>Mockito</i>" + TemplateIcons.Mockito.asHtml()+ "</html>",
-                "<html><i>JUnit5</i></html><JUnit5><html>& <i>Mockito</i></html><Mockito>",
-                JUNIT5_MOCKITO_JAVA_TEMPLATE, Language.Java, TemplateRole.Tester));
-        templateDescriptors.add(new TemplateDescriptor("<html><i>TestNG </i>"+ TemplateIcons.TestNG.asHtml()+"& <i>Mockito</i>" + TemplateIcons.Mockito.asHtml()+ "</html>",
-                "<html><i>TestNG </i></html><TestNG><html>& <i>Mockito</i></html><Mockito>",
-                TESTNG_MOCKITO_JAVA_TEMPLATE, Language.Java, TemplateRole.Tester));
-        templateDescriptors.add(new TemplateDescriptor("<html><i>Groovy</i>" + TemplateIcons.Groovy.asHtml() + "<i>JUnit4</i>"+TemplateIcons.JUnit4.asHtml()+"& <i>Mockito</i>" + TemplateIcons.Mockito.asHtml()+ "</html>",
-                "<html><i>Groovy</i></html><Groovy><html><i>JUnit4</i></html><JUnit4><html>& <i>Mockito</i></html><Mockito>",
-                JUNIT4_MOCKITO_GROOVY_TEMPLATE, Language.Groovy, TemplateRole.Tester));
-        templateDescriptors.add(new TemplateDescriptor("<html><i>Spock</i>" + TemplateIcons.Groovy.asHtml() + " & <i>Mockito</i>" + TemplateIcons.Mockito.asHtml()+ "</html>",
-                "<html><i>Spock</i></html><Groovy><html> & <i>Mockito</i></html><Mockito>",
-                SPOCK_MOCKITO_GROOVY_TEMPLATE, Language.Groovy, TemplateRole.Tester));
-        templateDescriptors.add(new TemplateDescriptor("<html><i>Spock Parameterized</i>" + TemplateIcons.Groovy.asHtml() + " & <i>Mockito</i>" + TemplateIcons.Mockito.asHtml()+ "(Experimental)</html>",
-                "<html><i>Spock Parameterized</i></html><Groovy><html> & <i>Mockito</i></html><Mockito>(Experimental)",
-                SPOCK_PARAMETERIZED_MOCKITO_GROOVY_TEMPLATE, Language.Groovy, TemplateRole.Tester));
-        templateDescriptors.add(new TemplateDescriptor("<html><i>Specs2 </i>"+ TemplateIcons.Scala.asHtml()+" & <i>Mockito</i>" + TemplateIcons.Mockito.asHtml()+ "(Experimental)</html>",
-                "<html><i>Specs2 </i></html><Scala><html> & <i>Mockito</i></html><Mockito>(Experimental)",
-                SPECS2_MOCKITO_SCALA_TEMPLATE, Language.Scala, TemplateRole.Tester));
+//        templateDescriptors.add(new TemplateDescriptor("<html><i>JUnit4</i>"+ TemplateIcons.JUnit4.asHtml()+"& <i>Mockito</i>" + TemplateIcons.Mockito.asHtml()+ "</html>",
+//                "<html><i>JUnit4</i></html><JUnit4><html>& <i>Mockito</i></html><Mockito>",
+//                JUNIT4_MOCKITO_JAVA_TEMPLATE, Language.Java, TemplateRole.Tester));
+//        templateDescriptors.add(new TemplateDescriptor("<html><i>JUnit5</i>"+ TemplateIcons.JUnit5.asHtml()+"& <i>Mockito</i>" + TemplateIcons.Mockito.asHtml()+ "</html>",
+//                "<html><i>JUnit5</i></html><JUnit5><html>& <i>Mockito</i></html><Mockito>",
+//                JUNIT5_MOCKITO_JAVA_TEMPLATE, Language.Java, TemplateRole.Tester));
+//        templateDescriptors.add(new TemplateDescriptor("<html><i>TestNG </i>"+ TemplateIcons.TestNG.asHtml()+"& <i>Mockito</i>" + TemplateIcons.Mockito.asHtml()+ "</html>",
+//                "<html><i>TestNG </i></html><TestNG><html>& <i>Mockito</i></html><Mockito>",
+//                TESTNG_MOCKITO_JAVA_TEMPLATE, Language.Java, TemplateRole.Tester));
+//        templateDescriptors.add(new TemplateDescriptor("<html><i>Groovy</i>" + TemplateIcons.Groovy.asHtml() + "<i>JUnit4</i>"+TemplateIcons.JUnit4.asHtml()+"& <i>Mockito</i>" + TemplateIcons.Mockito.asHtml()+ "</html>",
+//                "<html><i>Groovy</i></html><Groovy><html><i>JUnit4</i></html><JUnit4><html>& <i>Mockito</i></html><Mockito>",
+//                JUNIT4_MOCKITO_GROOVY_TEMPLATE, Language.Groovy, TemplateRole.Tester));
+//        templateDescriptors.add(new TemplateDescriptor("<html><i>Spock</i>" + TemplateIcons.Groovy.asHtml() + " & <i>Mockito</i>" + TemplateIcons.Mockito.asHtml()+ "</html>",
+//                "<html><i>Spock</i></html><Groovy><html> & <i>Mockito</i></html><Mockito>",
+//                SPOCK_MOCKITO_GROOVY_TEMPLATE, Language.Groovy, TemplateRole.Tester));
+//        templateDescriptors.add(new TemplateDescriptor("<html><i>Spock Parameterized</i>" + TemplateIcons.Groovy.asHtml() + " & <i>Mockito</i>" + TemplateIcons.Mockito.asHtml()+ "(Experimental)</html>",
+//                "<html><i>Spock Parameterized</i></html><Groovy><html> & <i>Mockito</i></html><Mockito>(Experimental)",
+//                SPOCK_PARAMETERIZED_MOCKITO_GROOVY_TEMPLATE, Language.Groovy, TemplateRole.Tester));
+//        templateDescriptors.add(new TemplateDescriptor("<html><i>Specs2 </i>"+ TemplateIcons.Scala.asHtml()+" & <i>Mockito</i>" + TemplateIcons.Mockito.asHtml()+ "(Experimental)</html>",
+//                "<html><i>Specs2 </i></html><Scala><html> & <i>Mockito</i></html><Mockito>(Experimental)",
+//                SPECS2_MOCKITO_SCALA_TEMPLATE, Language.Scala, TemplateRole.Tester));
     }
 
     static {
         templateDescriptors.clear();
-        templateDescriptors.add(new TemplateDescriptor("<html><i>Spock</i>" + TemplateIcons.Groovy.asHtml() + " & <i>PowerMock</i></html>",
-                "<html><i>Spock</i></html><Groovy><html> & <i>PowerMock</i></html>",
-                SPOCK_POWERMOCK_GROOVY_TEMPLATE, Language.Groovy, TemplateRole.Tester));
+        templateDescriptors.add(new TemplateDescriptor("<html><i>Spock</i>",
+                "<html><i>Spock</i></html>",
+                "SpockAll.groovy", Language.Groovy, TemplateRole.Tester));
+        templateDescriptors.add(new TemplateDescriptor("<html><i>Spock ignore super</i>",
+                "<html><i>Spock ignore super</i></html>",
+                "SpockIgnoreSuper.groovy", Language.Groovy, TemplateRole.Tester));
     }
     public List<TemplateDescriptor> getTemplateDescriptors(){
         return templateDescriptors;
