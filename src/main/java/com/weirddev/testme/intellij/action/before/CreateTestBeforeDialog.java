@@ -173,7 +173,7 @@ public class CreateTestBeforeDialog extends DialogWrapper {
             selectedMethods.add(each.getMember());
         }
         for (MemberInfo each : methods) {
-            each.setChecked(selectedMethods.contains(each.getMember()));
+            each.setChecked(true);
         }
 
         myMethodsTable.setMemberInfos(methods);
@@ -434,15 +434,16 @@ public class CreateTestBeforeDialog extends DialogWrapper {
 
             myMethodsTable.setMemberInfos(methods);
         });
-
         myShowInheritedMethodsBox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 updateMethodsTable();
             }
         });
+
         restoreShowInheritedMembersStatus();
         updateMethodsTable();
+        myAllMethodsBox.setSelected(true);
         return panel;
     }
 

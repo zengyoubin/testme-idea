@@ -13,8 +13,7 @@ import java.util.*;
  * @author Yaron Yamin
  */
 @SuppressWarnings("unused")
-public class TestSubjectInspector
-{
+public class TestSubjectInspector {
     private static final Logger LOG = Logger.getInstance(TestSubjectInspector.class.getName());
 
     private static final Set<String> JAVA_FUTURE_TYPES = new HashSet<>(Arrays.asList("java.util.concurrent.Future", "java.util.concurrent.CompletableFuture", "java.util.concurrent.RunnableFuture",
@@ -22,7 +21,7 @@ public class TestSubjectInspector
             "java.util.concurrent.ExecutorCompletionService.QueueingFuture", "java.util.concurrent.ForkJoinTask.AdaptedRunnable", "java.util.concurrent.ForkJoinTask.AdaptedCallable", "java.util.concurrent.ForkJoinTask",
             "java.util.concurrent.ForkJoinTask.AdaptedRunnableAction", "java.util.concurrent.CountedCompleter", "java.util.concurrent.RecursiveTask", "java.util.concurrent.ForkJoinTask.RunnableExecuteAction",
             "java.util.concurrent.CompletableFuture.AsyncSupply", "java.util.concurrent.RecursiveAction", "java.util.concurrent.CompletableFuture.Completion", "java.util.concurrent.ScheduledFuture", "java.util.concurrent.RunnableScheduledFuture"));
-    private static final Set<String> SCALA_FUTURE_TYPES = new HashSet<String>(Arrays.asList("scala.concurrent.Future","scala.concurrent.impl.Promise"));
+    private static final Set<String> SCALA_FUTURE_TYPES = new HashSet<String>(Arrays.asList("scala.concurrent.Future", "scala.concurrent.impl.Promise"));
     private boolean generateTestsForInheritedMethods;
 
     public TestSubjectInspector(boolean generateTestsForInheritedMethods) {
@@ -43,11 +42,61 @@ public class TestSubjectInspector
      * @return true - if method should is testable according to it's access modifiers and TestMe configuration
      */
     public boolean shouldBeTested(Method method) {
-        return method.isTestable() && ( generateTestsForInheritedMethods || !method.isInherited());
+        return method.isTestable() && (generateTestsForInheritedMethods || !method.isInherited());
+    }
+
+    public boolean shouldSpy(Method method) {
+        String ownerClassCanonicalType = method.getOwnerClassCanonicalType();
+        Set<MethodCall> methodCalls = method.getMethodCallsIgnorePublicAndProtected();
+        boolean isSpy = false;
+        for (MethodCall methodCall : methodCalls) {
+            Method mc = methodCall.getMethod();
+            if (mc.getOwnerClassCanonicalType().equals(ownerClassCanonicalType)) {
+                if (mc.isPublic() || mc.isProtected()) {
+                    isSpy = true;
+                    break;
+                }
+            }
+        }
+        return isSpy;
+    }
+
+    public boolean isSpyMethod(Method calledMethod, Method callerMethod) {
+        if (calledMethod.getOwnerClassCanonicalType().equals(callerMethod.getOwnerClassCanonicalType())) {
+            Set<MethodCall> methodCalls = callerMethod.getMethodCallsIgnorePublicAndProtected();
+            boolean isMethodCalled = false;
+            for (MethodCall methodCall : methodCalls) {
+                Method method = methodCall.getMethod();
+                if ((method.isPublic() || method.isProtected()) && method.getMethodId().equals(calledMethod.getMethodId())) {
+                    isMethodCalled = true;
+                    break;
+                }
+            }
+            LOG.debug("calledMethod " + calledMethod.getMethodId() + " searched in " + methodCalls.size() + " calledMethod calls by tested calledMethod " + callerMethod.getMethodId() + " - is found:" + isMethodCalled);
+            return isMethodCalled;
+        }
+        return false;
     }
 
     /**
-     *
+     * @param calledMethod a calledMethod, possible being called
+     * @param callerMethod a calledMethod, possibly calling another
+     * @return true - if callerMethod implementation invokes calledMethod
+     */
+    public boolean isMethodCalledIgnore2P(Method calledMethod, Method callerMethod) {
+        Set<MethodCall> methodCalls = callerMethod.getMethodCallsIgnorePublicAndProtected();
+        boolean isMethodCalled = false;
+        for (MethodCall methodCall : methodCalls) {
+            if (methodCall.getMethod().getMethodId().equals(calledMethod.getMethodId())) {
+                isMethodCalled = true;
+                break;
+            }
+        }
+        LOG.debug("calledMethod " + calledMethod.getMethodId() + " searched in " + methodCalls.size() + " calledMethod calls by tested calledMethod " + callerMethod.getMethodId() + " - is found:" + isMethodCalled);
+        return isMethodCalled;
+    }
+
+    /**
      * @param calledMethod a calledMethod, possible being called
      * @param callerMethod a calledMethod, possibly calling another
      * @return true - if callerMethod implementation invokes calledMethod
@@ -65,9 +114,9 @@ public class TestSubjectInspector
         return isMethodCalled;
     }
 
+
     /**
-     *
-     * @param paramsMap test params for spock parameterized test
+     * @param paramsMap       test params for spock parameterized test
      * @param methodHasReturn true - if test method returns anything
      * @return formatted string of spock test method name with tested parameters
      */
@@ -79,8 +128,7 @@ public class TestSubjectInspector
             if (!TestBuilder.RESULT_VARIABLE_NAME.equals(param)) {
                 if (sb.length() == 0) {
                     sb.append(" where ");
-                }
-                else if (sb.length() > 0) {
+                } else if (sb.length() > 0) {
                     sb.append(" and ");
                 }
                 sb.append(param).append("=#").append(param);
@@ -94,11 +142,12 @@ public class TestSubjectInspector
 
     /**
      * Consutrcuts a formatted string of parameterized params table for spock test. should probably be deprecated in the future, in favor of a method accepting paramsMap of Map<String,List<String>> for multiple values per input argument
-     * @param paramsMap map of test arguments. for constructing a single parameterized row.
+     *
+     * @param paramsMap  map of test arguments. for constructing a single parameterized row.
      * @param linePrefix prefix add to resulting test params, typically used for indentation when passing the required preceding white spaces
      * @return formatted string of parameterized params table for spock test.
      */
-    public String formatSpockDataParameters(Map<String, String> paramsMap, String linePrefix) {//todo - should accept Map<String,List<String>> paramsMap instead
+    public String formatSpockDataParameters(Map<String, String> paramsMap, String linePrefix) {// todo - should accept Map<String,List<String>> paramsMap instead
         StringBuilder sb = new StringBuilder();
         final Set<String> paramNameKeys = paramsMap.keySet();
         final boolean hasInputParams = hasInputParams(paramNameKeys);
@@ -112,8 +161,7 @@ public class TestSubjectInspector
         }
         if (hasInputParams) {
             sb.append(" || ").append(TestBuilder.RESULT_VARIABLE_NAME).append("\n");
-        }
-        else {
+        } else {
             sb.append(TestBuilder.RESULT_VARIABLE_NAME).append(" << ");
         }
         final int headerLength = sb.length();
@@ -126,7 +174,7 @@ public class TestSubjectInspector
             }
         }
         String resultVal = paramsMap.get(TestBuilder.RESULT_VARIABLE_NAME);
-        resultVal = resultVal == null ? "true" : resultVal;
+        resultVal = resultVal == null ? "null" : resultVal;
         if (hasInputParams) {
             sb.append(" || ");
         }
@@ -171,11 +219,12 @@ public class TestSubjectInspector
     }
 
     /**
-     *  find an optimal constructor in type declaration. a constructor that seems best suited to initialize the type.
+     * find an optimal constructor in type declaration. a constructor that seems best suited to initialize the type.
+     *
      * @param type a Type that has constructors
      * @return the optimal constructor found
      */
-    public @Nullable Method findOptimalConstructor(Type type){
+    public @Nullable Method findOptimalConstructor(Type type) {
         final Optional<Method> optPrimaryCtor = Optional.of(type.getMethods()).flatMap(methods -> methods.stream().filter(Method::isPrimaryConstructor).findAny());
         return optPrimaryCtor.orElse(findBiggestValidConstructor(type));
     }

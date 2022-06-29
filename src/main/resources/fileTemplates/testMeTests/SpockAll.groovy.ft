@@ -8,57 +8,81 @@ import static org.powermock.api.mockito.PowerMockito.*
 
 
 #parse("File Header.java")
-class ${CLASS_NAME}  extends Specification {
+class ${CLASS_NAME} extends Specification {
 def testObj = new $TESTED_CLASS.canonicalName ( )
-#grRenderMockedFields($TESTED_CLASS.fields)
-#if($hasMocks)
-def setup ( ) {
+    #grRenderMockedFields($TESTED_CLASS.fields)
+    #if($hasMocks)
+    def setup ( ) {
 
-    #foreach($field in $TESTED_CLASS.fields)
-        #if($MockitoMockBuilder.isMockable($field))
-        testObj.$field.name = $field.name
+        #foreach($field in $TESTED_CLASS.fields)
+            #if($MockitoMockBuilder.isMockable($field))
+            testObj.$field.name = $field.name
+            #end
         #end
+    }
     #end
-}
-#end
-#foreach($method in $TESTED_CLASS.methods)
-    #if($SELECT_METHODS.contains($method.name))
+    #foreach($method in $TESTED_CLASS.methods)
+        #if($SELECT_METHODS.contains($method.name))
 
-        #if($TestSubjectUtils.shouldBeTested($method))
-            #set($paraTestComponents=$TestBuilder.buildPrameterizedTestComponents($method,$grReplacementTypesForReturn,$grReplacementTypes,$grDefaultTypeValues))
+            #if($TestSubjectUtils.shouldBeTested($method))
+                #set($paraTestComponents=$TestBuilder.buildPrameterizedTestComponents($method,$grReplacementTypesForReturn,$grReplacementTypes,$grDefaultTypeValues))
 
-        @Unroll
-        def "${method.name}Test"() {
-            #if($MockitoMockBuilder.shouldStub($method,$TESTED_CLASS.fields))
-            given: "设定相关方法入参"
+            @Unroll
+            def "${method.name}Test"() {
+                #if($MockitoMockBuilder.shouldStub($method,$TESTED_CLASS.fields) || $TestSubjectUtils.shouldSpy($method))
+                given: "设定相关方法入参"
+                    #if($TestSubjectUtils.shouldSpy($method))
+                    def spy = Spy ( testObj )
+                    #end
+                and: "Mock相关接口返回"
+                    #foreach($field in $TESTED_CLASS.fields)
+                        #if($MockitoMockBuilder.isMockable($field))
+                            #foreach($fieldMethod in $field.type.methods)
+                                #if($method.returnType && $fieldMethod.returnType.name !=
+                                    "void" && $TestSubjectUtils.isMethodCalledIgnore2P($fieldMethod,$method))
+                                    $field.name.${fieldMethod.name}($MockitoMockBuilder.buildMockArgsMatchers(${fieldMethod.methodParams},
+                                    "Groovy")) >> $TestBuilder.renderReturnParam($method,$fieldMethod.returnType,
+                                    "${fieldMethod.name}Response",$grReplacementTypes,$grDefaultTypeValues)
+                                #end
+                            #end
+                        #end
+                    #end
 
-            and: "Mock相关接口返回"
-                #foreach($field in $TESTED_CLASS.fields)
-                    #if($MockitoMockBuilder.isMockable($field))
-                        #foreach($fieldMethod in $field.type.methods)
-                            #if($method.returnType && $fieldMethod.returnType.name !=
-                                "void" && $TestSubjectUtils.isMethodCalled($fieldMethod,$method))
-                                $field.name.${fieldMethod.name}($MockitoMockBuilder.buildMockArgsMatchers(${fieldMethod.methodParams},
-                                "Groovy")) >> $TestBuilder.renderReturnParam($method,$fieldMethod.returnType,
-                                "${fieldMethod.name}Response",$grReplacementTypes,$grDefaultTypeValues)
+                    #if($TestSubjectUtils.shouldSpy($method))
+                    and: "Spy相关接口"
+                        #foreach($spyMethod in $method.spyMethods)
+                            #if($TestSubjectUtils.isSpyMethod($spyMethod,$method))
+                                #if($spyMethod.returnType.name != "void")
+                                spy.${spyMethod.name}($MockitoMockBuilder.buildMockArgsMatchers(${spyMethod.methodParams},
+                                    "Groovy")) >> $TestBuilder.renderReturnParam($method,$spyMethod.returnType,
+                                    "${spyMethod.name}Response",$grReplacementTypes,$grDefaultTypeValues)
+                                #else
+                                spy.${spyMethod.name}($MockitoMockBuilder.buildMockArgsMatchers(${spyMethod.methodParams},
+                                    "Groovy")) >> {}
+                                #end
                             #end
                         #end
                     #end
                 #end
 
+            when:
+                #if($TestSubjectUtils.shouldSpy($method))
+                def result =  #grRenderParameterizedMethodCall($method, $TESTED_CLASS.name, $paraTestComponents.methodClassParamsStr,
+                    "spy")
+                #else
+                def result =  #grRenderParameterizedMethodCall($method, $TESTED_CLASS.name, $paraTestComponents.methodClassParamsStr,
+                    "testObj")
+                #end
+
+            then: "验证返回结果里属性值是否符合预期"
+
+            result == expectedResult
+            where: "表格方式验证多种分支调用场景"
+                $TestSubjectUtils.formatSpockDataParameters($paraTestComponents.paramsMap, "        ")
+            }
             #end
-        when:
-        def result =  #grRenderParameterizedMethodCall($method, $TESTED_CLASS.name, $paraTestComponents.methodClassParamsStr)
-
-        then: "验证返回结果里属性值是否符合预期"
-
-        result == expectedResult
-        where: "表格方式验证多种分支调用场景"
-            $TestSubjectUtils.formatSpockDataParameters($paraTestComponents.paramsMap, "        ")
-        }
         #end
     #end
-#end
 
 }
 

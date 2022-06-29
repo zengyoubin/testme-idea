@@ -15,6 +15,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Date: 20/11/2016
@@ -91,6 +92,7 @@ public class TestTemplateContextBuilder {
         for (int i = 0; i < maxMethodCallsDepth; i++) {
             for (Method method : methods) {
                 resolveMethodCalls(methods, method);
+                resolveMethodCallsIgnorePublicAndProtected(methods, method);
             }
         }
         for (Method method : methods) {
@@ -146,6 +148,32 @@ public class TestTemplateContextBuilder {
         }
         method.getMethodCalls().removeAll(calledMethodsByMethodCalls);
         method.getMethodCalls().addAll(calledMethodsByMethodCalls);
+//        method.getCalledFamilyMembers().addAll(methodsInMyFamilyTree);
+    }
+
+    private void resolveMethodCallsIgnorePublicAndProtected(List<Method> methods, Method method) {
+        final Set<MethodCall> calledMethodsByMethodCalls = new HashSet<MethodCall>();
+        methods = methods.stream()
+                .filter(m -> !(m.isProtected() || m.isPublic()))
+                .collect(Collectors.toList());
+        for (MethodCall methodCall : method.getMethodCallsIgnorePublicAndProtected()) {
+            final Method calledMethodFound = find(methods, methodCall.getMethod().getMethodId());//find originally resolved method since methods in resolved method call are resolved in a shallow manner
+            if (calledMethodFound != null) {
+                MethodCall methodCallFound;
+                if (methodCall.getMethod() == calledMethodFound) {
+                    methodCallFound = methodCall;
+                } else {
+                    methodCallFound = new MethodCall(calledMethodFound, methodCall.getMethodCallArguments());
+                }
+//                methodsInMyFamilyTree.add(methodCallFound);
+                calledMethodsByMethodCalls.add(methodCallFound);
+                if (method.getOwnerClassCanonicalType()!=null && method.getOwnerClassCanonicalType().equals(methodCallFound.getMethod().getOwnerClassCanonicalType())) {
+                    calledMethodsByMethodCalls.addAll(calledMethodFound.getMethodCallsIgnorePublicAndProtected());
+                }
+            }
+        }
+        method.getMethodCallsIgnorePublicAndProtected().removeAll(calledMethodsByMethodCalls);
+        method.getMethodCallsIgnorePublicAndProtected().addAll(calledMethodsByMethodCalls);
 //        method.getCalledFamilyMembers().addAll(methodsInMyFamilyTree);
     }
 

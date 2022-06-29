@@ -29,6 +29,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -154,6 +155,10 @@ public class Method {
      */
     @Getter
     private Set<MethodCall> methodCalls = new HashSet<MethodCall>();
+
+    @Getter
+    private Set<MethodCall> methodCallsIgnorePublicAndProtected = new HashSet<MethodCall>();
+    private Set<Method> spyMethods;
     /**
      * methods referenced from this method. i.e.  SomeClassName::someMethodName
      */
@@ -356,7 +361,7 @@ public class Method {
     }
 
     private void resolveCalledMethods(PsiMethod psiMethod, TypeDictionary typeDictionary) {
-        //todo try to pass/support src class in scala/groovy as well. if successful, consider re-implementing with a factory method call
+        // todo try to pass/support src class in scala/groovy as well. if successful, consider re-implementing with a factory method call
         if (LanguageUtils.isGroovy(psiMethod.getLanguage())) {
             for (ResolvedMethodCall resolvedMethodCall : GroovyPsiTreeUtils.findMethodCalls(psiMethod)) {
                 addDirectMethodCallIfRelevant(typeDictionary, resolvedMethodCall, null);
@@ -371,6 +376,7 @@ public class Method {
             }
         }
         methodCalls = this.directMethodCalls;
+        methodCallsIgnorePublicAndProtected = new HashSet<>(directMethodCalls);
     }
 
     private void addDirectMethodCallIfRelevant(TypeDictionary typeDictionary, ResolvedMethodCall methodCalled, PsiClass srcClass) {
@@ -443,6 +449,13 @@ public class Method {
             LOG.warn(String.format("cant search for matching fields for parameter %s in method %s", psiParameter.getName(), psiMethod.getName()), e);
         }
         return fields;
+    }
+
+    public Set<Method> getSpyMethods() {
+        return this.getMethodCallsIgnorePublicAndProtected().stream()
+                .map(MethodCall::getMethod)
+                .filter(method -> method.getOwnerClassCanonicalType().equals(this.getOwnerClassCanonicalType()))
+                .collect(Collectors.toSet());
     }
 
     @Override

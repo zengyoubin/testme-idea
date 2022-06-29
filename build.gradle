@@ -153,6 +153,7 @@ if (enableIdeaScalaPlugin) {
 apply from: "$rootProject.projectDir/shared.gradle"
 enabledPlugins = filterPlugins(enabledPlugins)
 
+println(enabledPlugins)
 intellij {
     pluginName 'TestMe'
     instrumentCode = shouldInstrumentCode
