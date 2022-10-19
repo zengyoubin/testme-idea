@@ -1,5 +1,7 @@
 package com.weirddev.testme.intellij.utils;
+
 import com.intellij.psi.*;
+import com.intellij.psi.impl.source.tree.java.PsiMethodCallExpressionImpl;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.weirddev.testme.intellij.common.utils.LanguageUtils;
 import com.weirddev.testme.intellij.resolvers.to.MethodCallArg;
@@ -12,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Date: 15/05/2017
@@ -21,25 +24,26 @@ import java.util.List;
 public class JavaPsiTreeUtils {
     @NotNull
     public static List<ResolvedReference> findReferences(PsiMethod psiMethod) {
-        List<ResolvedReference> resolvedReferences =new ArrayList<ResolvedReference>();
+        List<ResolvedReference> resolvedReferences = new ArrayList<ResolvedReference>();
         final Collection<PsiReferenceExpression> psiReferenceExpressions = PsiTreeUtil.findChildrenOfType(psiMethod, PsiReferenceExpression.class);
         for (PsiReferenceExpression psiReferenceExpression : psiReferenceExpressions) {
             final PsiType refType = psiReferenceExpression.getType();
             final PsiElement psiElement = psiReferenceExpression.resolve();
             if (refType != null && !(psiElement instanceof PsiMethod)) {
-                final PsiType psiOwnerType = psiReferenceExpression.getLastChild()==null?null: resolveOwnerType(psiReferenceExpression.getLastChild());
+                final PsiType psiOwnerType = psiReferenceExpression.getLastChild() == null ? null : resolveOwnerType(psiReferenceExpression.getLastChild());
                 if (psiOwnerType != null) {
-                    resolvedReferences.add(new ResolvedReference(psiReferenceExpression.getReferenceName() , refType, psiOwnerType));
+                    resolvedReferences.add(new ResolvedReference(psiReferenceExpression.getReferenceName(), refType, psiOwnerType));
                 }
             }
         }
         return resolvedReferences;
     }
+
     @NotNull
     public static List<PsiMethod> findMethodReferences(PsiMethod psiMethod) {
         List<PsiMethod> resolvedReferences = new ArrayList<PsiMethod>();
 
-        final Collection<PsiJavaToken> psiJavaTokens= PsiTreeUtil.findChildrenOfType(psiMethod, PsiJavaToken.class);
+        final Collection<PsiJavaToken> psiJavaTokens = PsiTreeUtil.findChildrenOfType(psiMethod, PsiJavaToken.class);
         for (PsiJavaToken psiJavaToken : psiJavaTokens) {
             if (JavaTokenType.DOUBLE_COLON == psiJavaToken.getTokenType() && psiJavaToken.getParent() instanceof PsiMethodReferenceExpression /*|| "::".equals(psiJavaToken.getText())*/) {
                 final PsiMethodReferenceExpression psiMethodReferenceExpression = (PsiMethodReferenceExpression) psiJavaToken.getParent();
@@ -51,13 +55,13 @@ public class JavaPsiTreeUtils {
         }
         return resolvedReferences;
     }
+
     private static PsiType resolveOwnerType(PsiElement psiElement) {
         boolean dotAppeared = false;
-        for(PsiElement prevSibling  = psiElement.getPrevSibling();prevSibling!=null;prevSibling=prevSibling.getPrevSibling()) {
-            if(".".equals(prevSibling.getText())) {
+        for (PsiElement prevSibling = psiElement.getPrevSibling(); prevSibling != null; prevSibling = prevSibling.getPrevSibling()) {
+            if (".".equals(prevSibling.getText())) {
                 dotAppeared = true;
-            }
-            else if(dotAppeared && prevSibling instanceof PsiExpression) {
+            } else if (dotAppeared && prevSibling instanceof PsiExpression) {
                 return ((PsiExpression) prevSibling).getType();
             }
         }
@@ -66,7 +70,7 @@ public class JavaPsiTreeUtils {
 
     @NotNull
     public static List<ResolvedMethodCall> findMethodCalls(PsiMethod psiMethod) {
-        List<ResolvedMethodCall > methodCalled= new ArrayList<>();
+        List<ResolvedMethodCall> methodCalled = new ArrayList<>();
         final Collection<PsiCallExpression> psiMethodCallExpressions = PsiTreeUtil.findChildrenOfType(psiMethod, PsiCallExpression.class);
         for (PsiCallExpression psiMethodCallExpression : psiMethodCallExpressions) {
             final PsiMethod psiMethodResolved = psiMethodCallExpression.resolveMethod();
@@ -75,13 +79,22 @@ public class JavaPsiTreeUtils {
                 final ArrayList<MethodCallArg> methodCallArguments = new ArrayList<>();
                 if (argumentList != null) {
                     for (PsiElement psiElement : argumentList.getChildren()) {
-                        if (psiElement instanceof PsiJavaToken || psiElement instanceof PsiWhiteSpace ) {
+                        if (psiElement instanceof PsiJavaToken || psiElement instanceof PsiWhiteSpace) {
                             continue;
                         }
-                        methodCallArguments.add(new MethodCallArg(psiElement.getText()==null?"":psiElement.getText().trim()));
+                        methodCallArguments.add(new MethodCallArg(psiElement.getText() == null ? "" : psiElement.getText().trim()));
                     }
                 }
-                methodCalled.add(new ResolvedMethodCall(psiMethodResolved,methodCallArguments));
+                String callFieldName = null;
+                if (psiMethodCallExpression instanceof PsiMethodCallExpressionImpl) {
+                    PsiReferenceExpression methodExpression = ((PsiMethodCallExpressionImpl) psiMethodCallExpression).getMethodExpression();
+                    callFieldName = Optional.of(methodExpression)
+                            .map(PsiReferenceExpression::getQualifierExpression)
+                            .map(PsiElement::getLastChild)
+                            .map(PsiElement::getText)
+                            .orElse(null);
+                }
+                methodCalled.add(new ResolvedMethodCall(psiMethodResolved, methodCallArguments, callFieldName));
             }
         }
         return methodCalled;
@@ -89,16 +102,15 @@ public class JavaPsiTreeUtils {
 
     public static boolean resolveIfEnum(PsiClass psiClass) {
         if (psiClass != null) {
-            if(LanguageUtils.isScala(psiClass.getLanguage()) && ScalaTypeUtils.isEnum(psiClass)){
-                 return true;
-            }
-            else return psiClass.isEnum();
+            if (LanguageUtils.isScala(psiClass.getLanguage()) && ScalaTypeUtils.isEnum(psiClass)) {
+                return true;
+            } else return psiClass.isEnum();
         }
         return false;
     }
 
     public static List<String> resolveEnumValues(PsiClass psiClass, Object typePsiElement) {
-        if (psiClass!=null && typePsiElement!=null && LanguageUtils.isScala(psiClass.getLanguage()) && ScalaTypeUtils.isEnumeration(psiClass) ) {
+        if (psiClass != null && typePsiElement != null && LanguageUtils.isScala(psiClass.getLanguage()) && ScalaTypeUtils.isEnumeration(psiClass)) {
             return ScalaPsiTreeUtils.resolveEnumValues(typePsiElement);
         } else {
             return resolveJavaEnumValues(psiClass);

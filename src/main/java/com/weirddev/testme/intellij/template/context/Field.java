@@ -62,11 +62,17 @@ public class Field {
     }
 
     private Type buildType(PsiType type, TypeDictionary typeDictionary, int maxRecursionDepth) {
+        Type buildType;
         if (typeDictionary == null) {
-            return new Type(type, null, null, 0, false);
+            buildType = new Type(type, null, null, 0, false);
         } else {
-            return typeDictionary.getType(type, maxRecursionDepth, true);
+            buildType = typeDictionary.getType(type, maxRecursionDepth, true);
         }
+        if (buildType != null) {
+            buildType.setFromFiledName(this.name);
+            buildType.buildMethodCallFieldName();
+        }
+        return buildType;
     }
 
     private boolean isInherited(PsiField psiField, PsiClass srcClass) {

@@ -20,11 +20,21 @@ public class MethodCall {
      */
     @Getter private final List<MethodCallArgument> methodCallArguments;
 
+    @Getter
+    private final String callFieldName;
+
 
     public MethodCall(Method method, List<MethodCallArgument> methodCallArguments) {
 
         this.method = method;
         this.methodCallArguments = methodCallArguments;
+        this.callFieldName = null;
+    }
+    public MethodCall(Method method, List<MethodCallArgument> methodCallArguments,String callFieldName) {
+
+        this.method = method;
+        this.methodCallArguments = methodCallArguments;
+        this.callFieldName = callFieldName;
     }
 
     @Override

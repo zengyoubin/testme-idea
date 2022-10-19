@@ -88,6 +88,9 @@ public class TestSubjectInspector {
         boolean isMethodCalled = false;
         for (MethodCall methodCall : methodCalls) {
             if (methodCall.getMethod().getMethodId().equals(calledMethod.getMethodId())) {
+                if (methodCall.getCallFieldName() != null && calledMethod.getCallFieldName() != null && !Objects.equals(methodCall.getCallFieldName(), calledMethod.getCallFieldName())) {
+                    break;
+                }
                 isMethodCalled = true;
                 break;
             }

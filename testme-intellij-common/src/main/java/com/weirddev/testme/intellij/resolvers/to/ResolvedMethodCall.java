@@ -14,11 +14,20 @@ public class ResolvedMethodCall {
     private final PsiMethod psiMethod;
     private final List<MethodCallArg> methodCallArguments;
     private final String methodId;
+    private final String callFieldName;
 
     public ResolvedMethodCall(PsiMethod psiMethod, List<MethodCallArg> methodCallArguments) {
         this.psiMethod = psiMethod;
         this.methodCallArguments = methodCallArguments;
         methodId = PsiMethodUtils.formatMethodId(psiMethod);
+        this.callFieldName = null;
+    }
+
+    public ResolvedMethodCall(PsiMethod psiMethod, List<MethodCallArg> methodCallArguments,String callFieldName) {
+        this.psiMethod = psiMethod;
+        this.methodCallArguments = methodCallArguments;
+        methodId = PsiMethodUtils.formatMethodId(psiMethod);
+        this.callFieldName = callFieldName;
     }
 
     public PsiMethod getPsiMethod() {
@@ -29,6 +38,9 @@ public class ResolvedMethodCall {
         return methodCallArguments;
     }
 
+    public String getCallFieldName(){
+        return callFieldName;
+    }
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

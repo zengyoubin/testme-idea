@@ -24,6 +24,7 @@ import com.weirddev.testme.intellij.utils.ClassNameUtils;
 import com.weirddev.testme.intellij.utils.JavaPsiTreeUtils;
 import com.weirddev.testme.intellij.utils.PropertyUtils;
 import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -179,6 +180,10 @@ public class Method {
      */
     @Getter
     private final String methodId;
+
+    @Setter
+    @Getter
+    private String callFieldName;
     /**
      * Fields affected (assigned to) by methods called from this method. currently calculated only for constructors. i.e. when delegating to other constructors
      */
@@ -381,7 +386,7 @@ public class Method {
 
     private void addDirectMethodCallIfRelevant(TypeDictionary typeDictionary, ResolvedMethodCall methodCalled, PsiClass srcClass) {
         if (isRelevant(methodCalled.getPsiMethod().getContainingClass(), methodCalled.getPsiMethod())) {
-            this.directMethodCalls.add(new MethodCall(new Method(methodCalled.getPsiMethod(), srcClass, 1, typeDictionary), convertArgs(methodCalled.getMethodCallArguments())));
+            this.directMethodCalls.add(new MethodCall(new Method(methodCalled.getPsiMethod(), srcClass, 1, typeDictionary), convertArgs(methodCalled.getMethodCallArguments()), methodCalled.getCallFieldName()));
         }
     }
 
