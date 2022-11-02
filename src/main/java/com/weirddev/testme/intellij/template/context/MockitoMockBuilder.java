@@ -12,10 +12,11 @@ import java.util.regex.Pattern;
 /**
  * Utilities for Building string constructs of Mockito mock expressions.
  * Date: 31/03/2017
+ *
  * @author Yaron Yamin
  */
 
-public class  MockitoMockBuilder {
+public class MockitoMockBuilder {
     private static final Logger LOG = Logger.getInstance(MockitoMockBuilder.class.getName());
     private static final Map<String, String> TYPE_TO_ARG_MATCHERS;
     private static final Pattern SEMVER_PATTERN = Pattern.compile("^(\\d*)\\.(\\d*)\\.*");
@@ -97,8 +98,8 @@ public class  MockitoMockBuilder {
         if (intStr != null) {
             try {
                 return Integer.parseInt(intStr);
+            } catch (Exception ignore) {
             }
-            catch (Exception ignore){}
         }
         return null;
     }
@@ -108,9 +109,15 @@ public class  MockitoMockBuilder {
      */
     @SuppressWarnings("unused")
     public boolean isMockable(Field field) {
-        boolean isMockable = !field.getType().isPrimitive() && !isWrapperType(field.getType()) && (!field.getType().isFinal() || isMockitoMockMakerInlineOn) && !field.isOverridden() && !field.getType().isArray() && !field.getType().isEnum();
+        boolean isMockable = !field.getType().isPrimitive() &&
+                !isWrapperType(field.getType()) &&
+                (!field.getType().isFinal() || isMockitoMockMakerInlineOn) &&
+                !field.isOverridden() &&
+                !field.getType().isArray() &&
+                !(field.isFinal() && field.isStatic()) &&
+                !field.getType().isEnum();
         isMockable = isMockable && !field.getType().getCanonicalName().equals("org.slf4j.Logger");
-        LOG.debug("field "+field.getType().getCanonicalName()+" "+field.getName()+" is mockable:"+isMockable);
+        LOG.debug("field " + field.getType().getCanonicalName() + " " + field.getName() + " is mockable:" + isMockable);
         return isMockable;
     }
 
@@ -118,10 +125,10 @@ public class  MockitoMockBuilder {
      * true - if argument can be mocked given the provided default types
      */
     @SuppressWarnings("unused")
-    public boolean isMockable(Param param, Map<String,String> defaultTypes) {
+    public boolean isMockable(Param param, Map<String, String> defaultTypes) {
         final Type type = param.getType();
-        final boolean isMockable = !type.isPrimitive() && !TestBuilderUtil.isStringType(type.getCanonicalName()) && !isWrapperType(type) && (!type.isFinal() || isMockitoMockMakerInlineOn) && !type.isArray() && !type.isEnum() &&  defaultTypes.get(type.getCanonicalName()) == null;
-        LOG.debug("param "+ type.getCanonicalName()+" "+param.getName()+" is mockable:"+isMockable);
+        final boolean isMockable = !type.isPrimitive() && !TestBuilderUtil.isStringType(type.getCanonicalName()) && !isWrapperType(type) && (!type.isFinal() || isMockitoMockMakerInlineOn) && !type.isArray() && !type.isEnum() && defaultTypes.get(type.getCanonicalName()) == null;
+        LOG.debug("param " + type.getCanonicalName() + " " + param.getName() + " is mockable:" + isMockable);
         return isMockable;
     }
 
@@ -142,7 +149,7 @@ public class  MockitoMockBuilder {
      * true - if method had any argument that can be mocked given the provided default types
      */
     @SuppressWarnings("unused")
-    public boolean hasMocks(Method ctor, Map<String,String> defaultTypes) {
+    public boolean hasMocks(Method ctor, Map<String, String> defaultTypes) {
         if (ctor == null) {
             return false;
         }
@@ -157,13 +164,14 @@ public class  MockitoMockBuilder {
 
     /**
      * constructs an error message explaining why field cannot be mocked
+     *
      * @param prefix add prefix to message
-     * @param field reported field
+     * @param field  reported field
      * @return an error message explaining why field cannot be mocked
      */
     @SuppressWarnings("unused")
-    public String getImmockabiliyReason(String prefix,Field field) {
-        final String reasonMsgPrefix = prefix+"Field " + field.getName() + " of type " + field.getType().getName();
+    public String getImmockabiliyReason(String prefix, Field field) {
+        final String reasonMsgPrefix = prefix + "Field " + field.getName() + " of type " + field.getType().getName();
         if (field.getType().isFinal() && !isMockitoMockMakerInlineOn && isMockExpected(field)) {
             return reasonMsgPrefix + " - was not mocked since Mockito doesn't mock a Final class when 'mock-maker-inline' option is not set";
         } else if (field.getType().isArray()) {
@@ -177,13 +185,14 @@ public class  MockitoMockBuilder {
 
     /**
      * constructs mocked arguments expression
-     * @param params method params being mocked
+     *
+     * @param params   method params being mocked
      * @param language String representation of test code {@link com.weirddev.testme.intellij.template.context.Language}
      * @return mocked arguments expression
      * @see Language
      */
     @SuppressWarnings("unused")
-    public String buildMockArgsMatchers(List<Param> params,String language) {
+    public String buildMockArgsMatchers(List<Param> params, String language) {
         final StringBuilder sb = new StringBuilder();
         for (Param param : params) {
             if (sb.length() > 0) {
@@ -196,26 +205,26 @@ public class  MockitoMockBuilder {
 
     /**
      * resolves relevant mock matcher from param
-     * @param param being mocked
+     *
+     * @param param    being mocked
      * @param language test code language
      * @return relevant mock matcher for param
      */
     @NotNull
     private String deductMatcherTypeMethod(Param param, Language language) {
-        if(language == Language.Groovy){
+        if (language == Language.Groovy) {
             return "_";
         }
         String matcherType;
         if (param.getType().isVarargs()) {
             matcherType = "anyVararg";
-        }
-        else {
+        } else {
             matcherType = TYPE_TO_ARG_MATCHERS.get(param.getType().getCanonicalName());
         }
         if (matcherType == null) {
             matcherType = "any";
         }
-        //todo support anyCollection(),anyMap(),anySet() and consider arrays
+        // todo support anyCollection(),anyMap(),anySet() and consider arrays
         if (language != Language.Scala) {
             matcherType += "()";
         }
@@ -224,7 +233,8 @@ public class  MockitoMockBuilder {
 
     /**
      * true - if should stub tested method
-     * @param testMethod method being tested
+     *
+     * @param testMethod        method being tested
      * @param testedClassFields fields of owner type being tested
      */
     @SuppressWarnings("unused")
@@ -233,7 +243,7 @@ public class  MockitoMockBuilder {
         if (stubMockMethodCallsReturnValues) {
             for (Field testedClassField : testedClassFields) {
                 if (isMockable(testedClassField)) {
-                    LOG.debug("field "+testedClassField.getName()+" type "+testedClassField.getType().getCanonicalName()+" type methods:"+testedClassField.getType().getMethods().size());
+                    LOG.debug("field " + testedClassField.getName() + " type " + testedClassField.getType().getCanonicalName() + " type methods:" + testedClassField.getType().getMethods().size());
                     for (Method fieldMethod : testedClassField.getType().getMethods()) {
                         if (fieldMethod.getReturnType() != null && !"void".equals(fieldMethod.getReturnType().getCanonicalName()) && testSubjectInspector.isMethodCalled(fieldMethod, testMethod)) {
                             shouldStub = true;
@@ -243,18 +253,19 @@ public class  MockitoMockBuilder {
                 }
             }
         }
-        LOG.debug("method "+testMethod.getMethodId()+" should be stabbed:"+shouldStub);
+        LOG.debug("method " + testMethod.getMethodId() + " should be stabbed:" + shouldStub);
         return shouldStub;
     }
 
     /**
      * true - if tested method should be stubbed
-     * @param testMethod - method being tested
-     * @param ctor - constructor of method return type
+     *
+     * @param testMethod   - method being tested
+     * @param ctor         - constructor of method return type
      * @param defaultTypes - default type values
      */
     @SuppressWarnings("unused")
-    public boolean shouldStub(Method testMethod, Method ctor, Map<String,String> defaultTypes) {
+    public boolean shouldStub(Method testMethod, Method ctor, Map<String, String> defaultTypes) {
         boolean shouldStub = false;
         if (ctor == null || !stubMockMethodCallsReturnValues) {
             return false;
@@ -262,7 +273,7 @@ public class  MockitoMockBuilder {
         List<Param> ctorParams = ctor.getMethodParams();
         for (Param param : ctorParams) {
             if (isMockable(param, defaultTypes)) {
-                LOG.debug("ctor param "+param.getName()+" type "+param.getType().getCanonicalName()+" type methods:"+param.getType().getMethods().size());
+                LOG.debug("ctor param " + param.getName() + " type " + param.getType().getCanonicalName() + " type methods:" + param.getType().getMethods().size());
                 for (Method method : param.getType().getMethods()) {
                     if (method.getReturnType() != null && !"void".equals(method.getReturnType().getCanonicalName()) && testSubjectInspector.isMethodCalled(method, testMethod)) {
                         shouldStub = true;
@@ -271,7 +282,7 @@ public class  MockitoMockBuilder {
                 }
             }
         }
-        LOG.debug("method "+testMethod.getMethodId()+" should be stabbed:"+shouldStub);
+        LOG.debug("method " + testMethod.getMethodId() + " should be stabbed:" + shouldStub);
         return shouldStub;
     }
 /*
@@ -298,8 +309,8 @@ public class  MockitoMockBuilder {
 */
 
     /**
-      *  @return true - if Field should be mocked
-      */
+     * @return true - if Field should be mocked
+     */
     public boolean isMockExpected(Field field) {
         return !field.getType().isPrimitive() && !isWrapperType(field.getType()) && !field.isStatic() && !field.isOverridden();
     }
@@ -323,10 +334,9 @@ public class  MockitoMockBuilder {
      * @return Mockito init mocks method name. typically "initMocks" or "openMocks" depending on Mockito version
      */
     public String getInitMocksMethod() {
-        if (mockitoCoreMajorVersion != null && mockitoCoreMinorVersion != null && ((mockitoCoreMajorVersion == 3  && mockitoCoreMinorVersion >= 4) || mockitoCoreMajorVersion > 3) ) {
+        if (mockitoCoreMajorVersion != null && mockitoCoreMinorVersion != null && ((mockitoCoreMajorVersion == 3 && mockitoCoreMinorVersion >= 4) || mockitoCoreMajorVersion > 3)) {
             return "openMocks";
-        }
-        else {
+        } else {
             return "initMocks";
         }
     }
