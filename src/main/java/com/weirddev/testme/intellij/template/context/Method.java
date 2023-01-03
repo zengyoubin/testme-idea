@@ -359,7 +359,7 @@ public class Method {
 
     private void addDirectMethodCallIfRelevant(TypeDictionary typeDictionary, ResolvedMethodCall methodCalled, PsiClass srcClass) {
         if (isRelevant(methodCalled.getPsiMethod().getContainingClass(), methodCalled.getPsiMethod())) {
-            this.directMethodCalls.add(new MethodCall(new Method(methodCalled.getPsiMethod(), srcClass, 1, typeDictionary, null),convertArgs(methodCalled.getMethodCallArguments())));
+            this.directMethodCalls.add(new MethodCall(new Method(methodCalled.getPsiMethod(), srcClass, 1, typeDictionary, null),convertArgs(methodCalled.getMethodCallArguments()),methodCalled.getCallFieldName()));
         }
     }
 

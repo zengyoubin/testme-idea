@@ -50,7 +50,7 @@ public class TestMeGenerator {
     public TestMeGenerator() {
         this(new TestClassElementsLocator(), new TestTemplateContextBuilder(new MockBuilderFactory()),new CodeRefactorUtil());
     }
-    
+
     TestMeGenerator(TestClassElementsLocator testClassElementsLocator, TestTemplateContextBuilder testTemplateContextBuilder, CodeRefactorUtil codeRefactorUtil) {
         this.testClassElementsLocator = testClassElementsLocator;
         this.testTemplateContextBuilder = testTemplateContextBuilder;
@@ -59,20 +59,6 @@ public class TestMeGenerator {
 
     public PsiElement generateTest(final FileTemplateContext context) {
         final Project project = context.getProject();
-        CreateTestBeforeDialog testDialog = new CreateTestBeforeAction().createTestDialog(project, context.getSrcModule(), context.getSrcClass(), context.getTargetPackage());
-        boolean get = testDialog.showAndGet();
-        if (!get) {
-            return null;
-        }
-        Collection<MemberInfo> selectedMethods = testDialog.getSelectedMethods();
-        selectedMethods.stream()
-                .map(MemberInfoBase::getDisplayName)
-                .map(s -> {
-                    int index = s.indexOf("(");
-                    return s.substring(0, index);
-                })
-                .forEach(selectMethods::add);
-
         // todo
         return PostprocessReformattingAspect.getInstance(project).postponeFormattingInside(new Computable<PsiElement>() {
             public PsiElement compute() {
@@ -125,6 +111,20 @@ public class TestMeGenerator {
                 return classes[0].getContainingFile();
             }
         }
+        CreateTestBeforeDialog testDialog = new CreateTestBeforeAction().createTestDialog(context.getProject(), context.getSrcModule(), context.getSrcClass(), context.getTargetPackage());
+        boolean get = testDialog.showAndGet();
+        if (!get) {
+            return null;
+        }
+        Collection<MemberInfo> selectedMethods = testDialog.getSelectedMethods();
+        selectedMethods.stream()
+                .map(MemberInfoBase::getDisplayName)
+                .map(s -> {
+                    int index = s.indexOf("(");
+                    return s.substring(0, index);
+                })
+                .forEach(selectMethods::add);
+
         final PsiFile classFromTemplate = createTestClassFromCodeTemplate(context, targetDirectory);
         if (classFromTemplate != null) {
             return classFromTemplate;
