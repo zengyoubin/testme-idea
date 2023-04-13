@@ -1,7 +1,7 @@
 <idea-plugin>
   <id>com.weirddev.testme</id>
   <name>TestMe</name>
-  <version>6.0.3</version>
+  <version>6.0.4</version>
   <vendor email="testme@weirddev.com" url="http://weirddev.com">WeirdDev</vendor>
 
   <description><![CDATA[
@@ -30,7 +30,7 @@
     ]]>
   </change-notes>
   <!-- please see https://confluence.jetbrains.com/display/IDEADEV/Build+Number+Ranges for description -->
-  <idea-version since-build="211"/>
+  <idea-version since-build="231"/>
   <depends>com.intellij.modules.java</depends>
   <depends>JUnit</depends>
   <depends optional="true" config-file="plugin-groovy.xml">org.intellij.groovy</depends>

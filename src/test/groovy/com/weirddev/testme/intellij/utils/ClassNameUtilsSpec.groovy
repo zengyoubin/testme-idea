@@ -5,16 +5,29 @@ import spock.lang.*
 class ClassNameUtilsSpec extends Specification {
 
 
+    @Unroll
     def "stripGenerics"() {
-
-        expect:
-        ClassNameUtils.stripGenerics(canonicalName) == result
+        when:
+        def res = ClassNameUtils.stripGenerics(canonicalName)
+        then:
+        res == result
 
         where:
         canonicalName               | result
-        "java.util.Set"             | "java.util.Set"
-        "java.util.Set<Fire>"       | "java.util.Set"
-        "java.util.Set<List<Fire>>" | "java.util.Set"
+        "java.util.Set"             | "java.util.Set1"
+        "java.util.Set<Fire>"       | "java.util.Set1"
+        "java.util.Set<List<Fire>>" | "java.util.Set1"
+    }
+    @Unroll
+    def "test"() {
+        when:
+        def s = source
+        then:
+        s == expectd
+        where:
+        source || expectd
+        "1"    || "2"
+
     }
 
     def "extractGenerics"() {
