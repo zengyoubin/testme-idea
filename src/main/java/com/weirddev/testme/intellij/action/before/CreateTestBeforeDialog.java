@@ -89,36 +89,9 @@ public class CreateTestBeforeDialog extends DialogWrapper {
 
     private void setMemberInfos(List<MemberInfo> methods) {
         myMethodsTable.setMemberInfos(methods);
-        fixUpdatePresentation(methods);
     }
 
-    @SuppressWarnings("all")
-    private void fixUpdatePresentation(List<MemberInfo> methods) {
-        try {
-            AsyncPromise asyncPromise = (AsyncPromise) FieldUtils.readField(myMethodsTable, "myCancellablePromise", true);
-            try {
-                if (asyncPromise.get(100, TimeUnit.MILLISECONDS) != null) {
-                    return;
-                }
-            } catch (Exception exception) {
-                if (exception instanceof TimeoutException) {
 
-                } else {
-                    throw exception;
-                }
-            }
-            List list = new ArrayList(methods.size());
-
-            for (MemberInfo method : methods) {
-                Object obj = MethodUtils.invokeMethod(myMethodsTable, true, "calculateMemberInfoData", method);
-                list.add(obj);
-            }
-            asyncPromise.setResult(list);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-    }
 
     private void restoreShowInheritedMembersStatus() {
         myShowInheritedMethodsBox.setSelected(getProperties().getBoolean(SHOW_INHERITED_MEMBERS_PROPERTY));
