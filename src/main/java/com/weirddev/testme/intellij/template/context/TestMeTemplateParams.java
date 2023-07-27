@@ -18,6 +18,8 @@ public interface TestMeTemplateParams {
      * Tested class package
      */
     String PACKAGE_NAME = "PACKAGE_NAME";
+
+    String SELECT_METHODS = "SELECT_METHODS";
     /**
      * Tested class name
      */

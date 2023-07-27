@@ -27,6 +27,7 @@ import java.util.List;
 
 /**
  * Date: 10/15/2016
+ *
  * @author Yaron Yamin
  * @see GotoTestOrCodeHandler
  */
@@ -50,8 +51,9 @@ public class TestMeActionHandler extends TestMePopUpHandler {
         findNestedClassName(editor, file, (PsiNamedElement) sourceElement);
         TestMeTemplateManager fileTemplateManager = TestMeTemplateManager.getInstance(file.getProject());
         List<TemplateDescriptor> templateDescriptors = fileTemplateManager.getTestTemplates();
+        actions.add(new MyTestMeAdditionalAction(editor, file));
         for (final TemplateDescriptor templateDescriptor : templateDescriptors) {
-            actions.add(new TestMeAdditionalAction(templateDescriptor, editor, file) );
+            actions.add(new TestMeAdditionalAction(templateDescriptor, editor, file));
         }
         actions.add(new ConfigurationLinkAction());
         return new GotoData(sourceElement, actions);
@@ -63,7 +65,7 @@ public class TestMeActionHandler extends TestMePopUpHandler {
         PsiNamedElement namedElement = (PsiNamedElement) sourceElement;
         final String name = namedElement.getName();
         String nestedClassName = findNestedClassName(editor, file, namedElement);
-        return TestMeBundle.message("testMe.create.title", nestedClassName !=null? nestedClassName :name);
+        return TestMeBundle.message("testMe.create.title", nestedClassName != null ? nestedClassName : name);
     }
 
     private String findNestedClassName(Editor editor, PsiFile file, PsiNamedElement sourceElement) {
@@ -73,7 +75,7 @@ public class TestMeActionHandler extends TestMePopUpHandler {
             PsiClass containingClass = CreateTestMeAction.getContainingClass(element);
             if (containingClass != null) {
                 final String name = sourceElement.getName();
-                if (containingClass.getName()!=null && !containingClass.getName().equals(name)) {
+                if (containingClass.getName() != null && !containingClass.getName().equals(name)) {
                     alternativeSourceName = containingClass.getName();
                 }
             }
@@ -83,7 +85,7 @@ public class TestMeActionHandler extends TestMePopUpHandler {
 
     @Override
     protected String getFeatureUsedKey() {
-        return "TestMe.generate.test"; //todo - map key. see lazyLoadFromPluginsFeaturesProviders()
+        return "TestMe.generate.test"; // todo - map key. see lazyLoadFromPluginsFeaturesProviders()
     }
 
     @NotNull
@@ -100,7 +102,7 @@ public class TestMeActionHandler extends TestMePopUpHandler {
 
     @Nullable
     @Override
-    protected String getAdText(PsiElement source, int length) {//todo might be useful for generate and run functionality, currently un-used
+    protected String getAdText(PsiElement source, int length) {// todo might be useful for generate and run functionality, currently un-used
 //        if (length > 0 && !TestFinderHelper.isTest(source)) {
 //            final Keymap keymap = KeymapManager.getInstance().getActiveKeymap();
 //            final Shortcut[] shortcuts = keymap.getShortcuts(DefaultRunExecutor.getRunExecutorInstance().getContextActionId());
@@ -114,9 +116,8 @@ public class TestMeActionHandler extends TestMePopUpHandler {
     @Override
     protected void navigateToElement(Navigatable element) {
         if (element instanceof PsiElement) {
-            NavigationUtil.activateFileWithPsiElement((PsiElement)element, true);
-        }
-        else {
+            NavigationUtil.activateFileWithPsiElement((PsiElement) element, true);
+        } else {
             element.navigate(true);
         }
     }

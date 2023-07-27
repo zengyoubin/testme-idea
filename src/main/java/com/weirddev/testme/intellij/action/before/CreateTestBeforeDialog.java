@@ -22,21 +22,14 @@ import com.intellij.ui.EditorTextField;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.util.SmartList;
 import com.intellij.util.ui.JBUI;
-import org.apache.commons.lang3.reflect.FieldUtils;
-import org.apache.commons.lang3.reflect.MethodUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.concurrency.AsyncPromise;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
+import java.util.*;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 public class CreateTestBeforeDialog extends DialogWrapper {
     private static final String RECENTS_KEY = "CreateTestDialog.RecentsKey";
@@ -45,7 +38,7 @@ public class CreateTestBeforeDialog extends DialogWrapper {
     private final Project myProject;
     private final PsiClass myTargetClass;
     private final PsiPackage myTargetPackage;
-
+    private final Set<String> existsTestMethods;
 
     private EditorTextField myTargetClassNameField;
     private final JCheckBox myShowInheritedMethodsBox = new JCheckBox(JavaBundle.message("intention.create.test.dialog.show.inherited"));
@@ -58,9 +51,11 @@ public class CreateTestBeforeDialog extends DialogWrapper {
                                   @NotNull @NlsContexts.DialogTitle String title,
                                   PsiClass targetClass,
                                   PsiPackage targetPackage,
-                                  Module targetModule) {
+                                  Module targetModule,
+                                  Set<String> existsTestMethods) {
         super(project, true);
         myProject = project;
+        this.existsTestMethods = existsTestMethods;
 
         myTargetClass = targetClass;
         myTargetPackage = targetPackage;
@@ -81,7 +76,11 @@ public class CreateTestBeforeDialog extends DialogWrapper {
         List<MemberInfo> methods = TestIntegrationUtils.extractClassMethods(
                 myTargetClass, myShowInheritedMethodsBox.isSelected());
         for (MemberInfo each : methods) {
-            each.setChecked(true);
+            int index = each.getDisplayName().indexOf("(");
+            String testMethodName = each.getDisplayName().substring(0, index) + "Test";
+            if (!existsTestMethods.contains(testMethodName)) {
+                each.setChecked(true);
+            }
         }
         setMemberInfos(methods);
 
@@ -90,7 +89,6 @@ public class CreateTestBeforeDialog extends DialogWrapper {
     private void setMemberInfos(List<MemberInfo> methods) {
         myMethodsTable.setMemberInfos(methods);
     }
-
 
 
     private void restoreShowInheritedMembersStatus() {

@@ -3,9 +3,7 @@ package com.weirddev.testme.intellij.generator;
 import com.intellij.codeInsight.CodeInsightBundle;
 import com.intellij.codeInsight.CodeInsightUtil;
 import com.intellij.codeInsight.FileModificationService;
-import com.intellij.ide.fileTemplates.FileTemplate;
 import com.intellij.ide.fileTemplates.FileTemplateManager;
-import com.intellij.ide.fileTemplates.FileTemplateUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.ex.IdeDocumentHistory;
@@ -30,8 +28,10 @@ import com.weirddev.testme.intellij.template.context.TestMeTemplateParams;
 import com.weirddev.testme.intellij.ui.template.TestMeTemplateManager;
 import org.apache.velocity.app.Velocity;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.plugins.groovy.lang.psi.api.statements.typedef.GrTypeDefinition;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Date: 10/19/2016
@@ -39,19 +39,19 @@ import java.util.*;
  * @author Yaron Yamin
  * @see JavaTestGenerator
  */
-public class TestMeGenerator {
+public class MyTestMeGenerator {
     private final TestClassElementsLocator testClassElementsLocator;
     private final TestTemplateContextBuilder testTemplateContextBuilder;
     private final CodeRefactorUtil codeRefactorUtil;
 
     private final Set<String> selectMethods = new HashSet<>();
-    private static final Logger LOG = Logger.getInstance(TestMeGenerator.class.getName());
+    private static final Logger LOG = Logger.getInstance(MyTestMeGenerator.class.getName());
 
-    public TestMeGenerator() {
+    public MyTestMeGenerator() {
         this(new TestClassElementsLocator(), new TestTemplateContextBuilder(new MockBuilderFactory()), new CodeRefactorUtil());
     }
 
-    TestMeGenerator(TestClassElementsLocator testClassElementsLocator, TestTemplateContextBuilder testTemplateContextBuilder, CodeRefactorUtil codeRefactorUtil) {
+    MyTestMeGenerator(TestClassElementsLocator testClassElementsLocator, TestTemplateContextBuilder testTemplateContextBuilder, CodeRefactorUtil codeRefactorUtil) {
         this.testClassElementsLocator = testClassElementsLocator;
         this.testTemplateContextBuilder = testTemplateContextBuilder;
         this.codeRefactorUtil = codeRefactorUtil;
@@ -60,7 +60,8 @@ public class TestMeGenerator {
     public PsiElement generateTest(final FileTemplateContext context) {
         final Project project = context.getProject();
 
-        CreateTestBeforeDialog testDialog = new CreateTestBeforeAction().createTestDialog(context.getProject(), context.getSrcModule(), context.getSrcClass(), context.getTargetPackage(), Collections.emptySet());
+        Set<String> existsTestMethods = findExistsTestMethods(context.getTargetDirectory(), context.getTargetClass());
+        CreateTestBeforeDialog testDialog = new CreateTestBeforeAction().createTestDialog(context.getProject(), context.getSrcModule(), context.getSrcClass(), context.getTargetPackage(),existsTestMethods);
         boolean get = testDialog.showAndGet();
         if (!get) {
             return null;
@@ -115,17 +116,6 @@ public class TestMeGenerator {
     @Nullable
     private PsiFile createTestClass(FileTemplateContext context) {
         final PsiDirectory targetDirectory = context.getTargetDirectory();
-        final PsiPackage aPackage = JavaDirectoryService.getInstance().getPackage(targetDirectory);
-        if (aPackage != null) {
-            final GlobalSearchScope scope = GlobalSearchScopesCore.directoryScope(targetDirectory, false);
-            final PsiClass[] classes = aPackage.findClassByShortName(context.getTargetClass(), scope);
-            if (classes.length > 0) {
-                if (!FileModificationService.getInstance().preparePsiElementForWrite(classes[0])) {
-                    return null;
-                }
-                return classes[0].getContainingFile();
-            }
-        }
 
 
         final PsiFile classFromTemplate = createTestClassFromCodeTemplate(context, targetDirectory);
@@ -136,17 +126,14 @@ public class TestMeGenerator {
     }
 
     private PsiFile createTestClassFromCodeTemplate(final FileTemplateContext context, final PsiDirectory targetDirectory) {
-        final String templateName = context.getFileTemplateDescriptor().getFileName();
         FileTemplateManager fileTemplateManager = TestMeTemplateManager.getInstance(targetDirectory.getProject());
         Map<String, Object> templateCtxtParams = testTemplateContextBuilder.build(context, fileTemplateManager.getDefaultProperties());
         templateCtxtParams.put(TestMeTemplateParams.SELECT_METHODS, selectMethods);
         try {
-            FileTemplate codeTemplate = fileTemplateManager.getInternalTemplate(templateName);
-            codeTemplate.setReformatCode(false);
             Velocity.setProperty(Velocity.VM_MAX_DEPTH, 200);
             final long startGeneration = new Date().getTime();
-            final PsiElement psiElement = FileTemplateUtil.createFromTemplate(codeTemplate, context.getTargetClass(), templateCtxtParams, targetDirectory, null);
-            LOG.debug("Done generating PsiElement from template " + codeTemplate.getName() + " in " + (new Date().getTime() - startGeneration) + " millis");
+            final PsiElement psiElement = new MySpockTestGenerator(context, templateCtxtParams).createFromTemplate(targetDirectory);
+            // LOG.debug("Done generating PsiElement from template "+codeTemplate.getName()+" in "+(new Date().getTime()-startGeneration)+" millis");
             final long startReformating = new Date().getTime();
             final PsiElement resolvedPsiElement = resolveEmbeddedClass(psiElement);
             final PsiFile psiFile = resolvedPsiElement instanceof PsiFile ? (PsiFile) resolvedPsiElement : resolvedPsiElement.getContainingFile();
@@ -219,5 +206,25 @@ public class TestMeGenerator {
     @Override
     public String toString() {
         return CodeInsightBundle.message("intention.create.test.dialog.java");
+    }
+
+    @Nullable
+    private Set<String> findExistsTestMethods(PsiDirectory targetDirectory, String testClassName) {
+        final PsiPackage aPackage = JavaDirectoryService.getInstance().getPackage(targetDirectory);
+        if (aPackage == null) {
+            return Collections.emptySet();
+        }
+
+        final GlobalSearchScope scope = GlobalSearchScopesCore.directoryScope(targetDirectory, false);
+        final PsiClass[] classes = aPackage.findClassByShortName(testClassName, scope);
+        if (classes.length <= 0) {
+            return Collections.emptySet();
+        }
+        if (!FileModificationService.getInstance().preparePsiElementForWrite(classes[0])) {
+            return Collections.emptySet();
+        }
+       return  Arrays.stream(classes[0].getMethods())
+                .map(PsiMethod::getName)
+                .collect(Collectors.toSet());
     }
 }
