@@ -151,7 +151,7 @@ enabledPlugins = filterPlugins(enabledPlugins)
 
 println(enabledPlugins)
 intellij {
-    pluginName = 'TestMe'
+    pluginName = 'TestMe-Trip'
     instrumentCode = shouldInstrumentCode
     version = ideaVersion
     type = ideaType

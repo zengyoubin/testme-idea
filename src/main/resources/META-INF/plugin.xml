@@ -1,6 +1,6 @@
 <idea-plugin>
   <id>com.weirddev.testme.ctrip</id>
-  <name>TestMe</name>
+  <name>TestMe-Trip</name>
   <version>7.0.0</version>
   <vendor email="testme@weirddev.com" url="http://weirddev.com">WeirdDev</vendor>
 
