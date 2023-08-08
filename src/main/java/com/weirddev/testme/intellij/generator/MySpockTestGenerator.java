@@ -132,7 +132,7 @@ public class MySpockTestGenerator {
                     continue;
                 }
                 for (Method fieldMethod : field.getType().getMethods()) {
-                    if (method.getReturnType() != null && !fieldMethod.getReturnType().getName().equals("void") && testSubjectInspector.isMethodCalledIgnore2P(fieldMethod, method)) {
+                    if (method.getReturnType() != null && fieldMethod.getReturnType() != null && !fieldMethod.getReturnType().getName().equals("void") && testSubjectInspector.isMethodCalledIgnore2P(fieldMethod, method)) {
                         sb.append(field.getName())
                                 .append(".")
                                 .append(fieldMethod.getName())
